@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>605</width>
+    <height>354</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <widget class="QSplitter" name="splitter">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>601</width>
+      <height>291</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+    <property name="childrenCollapsible">
+     <bool>false</bool>
+    </property>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="contentsTab">
+      <attribute name="title">
+       <string>Содержание</string>
+      </attribute>
+      <widget class="QTreeWidget" name="contentsTree">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>261</width>
+         <height>261</height>
+        </rect>
+       </property>
+       <column>
+        <property name="text">
+         <string notr="true">1</string>
+        </property>
+       </column>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="indexTab">
+      <attribute name="title">
+       <string>Индекс</string>
+      </attribute>
+      <widget class="QWidget" name="layoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>10</y>
+         <width>258</width>
+         <height>246</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="indexLayout">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Ведите термин для поиска:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="txtIndexSearch"/>
+        </item>
+        <item>
+         <widget class="QListWidget" name="termsList"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="searchTab">
+      <attribute name="title">
+       <string>Поиск</string>
+      </attribute>
+      <widget class="QWidget" name="">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>258</width>
+         <height>246</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="searchLayout">
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Введите ключевое слово:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="txtKeywordSearch"/>
+        </item>
+        <item>
+         <widget class="QListWidget" name="resultsList"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </widget>
+    <widget class="QStackedWidget" name="stackedWidget">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="viewPage">
+      <widget class="QTextEdit" name="rtfView">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>20</y>
+         <width>311</width>
+         <height>271</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="editPage">
+      <widget class="QWidget" name="layoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>30</x>
+         <y>20</y>
+         <width>258</width>
+         <height>211</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="editLayout">
+        <item>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>Термин:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="txtTerm"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Область знаний:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="txtDomain"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Ключевые слова:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="txtKeywords"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QWidget" name="toolbarArea" native="true"/>
+        </item>
+        <item>
+         <widget class="QTextEdit" name="rtfEdit"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionBack"/>
+   <addaction name="actionNext"/>
+   <addaction name="separator"/>
+   <addaction name="actionAddTerm"/>
+   <addaction name="actionEdit"/>
+   <addaction name="actionRequest"/>
+   <addaction name="separator"/>
+   <addaction name="actionLogout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionBack">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/previous.png</normaloff>:/images/icons/previous.png</iconset>
+   </property>
+   <property name="text">
+    <string>Назад</string>
+   </property>
+   <property name="toolTip">
+    <string>Назад</string>
+   </property>
+  </action>
+  <action name="actionNext">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/next.png</normaloff>:/images/icons/next.png</iconset>
+   </property>
+   <property name="text">
+    <string>Вперед</string>
+   </property>
+   <property name="toolTip">
+    <string>Вперед</string>
+   </property>
+  </action>
+  <action name="actionRequest">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/request.png</normaloff>:/images/icons/request.png</iconset>
+   </property>
+   <property name="text">
+    <string>Отправить запрос на толкование</string>
+   </property>
+   <property name="toolTip">
+    <string>Отправить запрос на толкование термина</string>
+   </property>
+  </action>
+  <action name="actionAddTerm">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/new.png</normaloff>:/images/icons/new.png</iconset>
+   </property>
+   <property name="text">
+    <string>Добавить термин</string>
+   </property>
+   <property name="toolTip">
+    <string>Добавить термин</string>
+   </property>
+  </action>
+  <action name="actionEdit">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/edit.png</normaloff>:/images/icons/edit.png</iconset>
+   </property>
+   <property name="text">
+    <string>Редактировать термин или понятие</string>
+   </property>
+   <property name="toolTip">
+    <string>Редактировать термин или понятие</string>
+   </property>
+  </action>
+  <action name="actionLogout">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/logout.png</normaloff>:/images/icons/logout.png</iconset>
+   </property>
+   <property name="text">
+    <string>Выйти</string>
+   </property>
+   <property name="toolTip">
+    <string>Выйти</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
