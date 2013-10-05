@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>605</width>
-    <height>354</height>
+    <width>782</width>
+    <height>529</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -45,6 +45,9 @@
          <width>261</width>
          <height>261</height>
         </rect>
+       </property>
+       <property name="headerHidden">
+        <bool>true</bool>
        </property>
        <column>
         <property name="text">
@@ -87,7 +90,7 @@
       <attribute name="title">
        <string>Поиск</string>
       </attribute>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -207,7 +210,7 @@
   <action name="actionBack">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/previous.png</normaloff>:/images/icons/previous.png</iconset>
+     <normaloff>:/icons/previous.png</normaloff>:/icons/previous.png</iconset>
    </property>
    <property name="text">
     <string>Назад</string>
@@ -219,7 +222,7 @@
   <action name="actionNext">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/next.png</normaloff>:/images/icons/next.png</iconset>
+     <normaloff>:/icons/next.png</normaloff>:/icons/next.png</iconset>
    </property>
    <property name="text">
     <string>Вперед</string>
@@ -231,7 +234,7 @@
   <action name="actionRequest">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/request.png</normaloff>:/images/icons/request.png</iconset>
+     <normaloff>:/icons/request.png</normaloff>:/icons/request.png</iconset>
    </property>
    <property name="text">
     <string>Отправить запрос на толкование</string>
@@ -243,7 +246,7 @@
   <action name="actionAddTerm">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/new.png</normaloff>:/images/icons/new.png</iconset>
+     <normaloff>:/icons/new.png</normaloff>:/icons/new.png</iconset>
    </property>
    <property name="text">
     <string>Добавить термин</string>
@@ -255,7 +258,7 @@
   <action name="actionEdit">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/edit.png</normaloff>:/images/icons/edit.png</iconset>
+     <normaloff>:/icons/edit.png</normaloff>:/icons/edit.png</iconset>
    </property>
    <property name="text">
     <string>Редактировать термин или понятие</string>
@@ -267,7 +270,7 @@
   <action name="actionLogout">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/logout.png</normaloff>:/images/icons/logout.png</iconset>
+     <normaloff>:/icons/logout.png</normaloff>:/icons/logout.png</iconset>
    </property>
    <property name="text">
     <string>Выйти</string>

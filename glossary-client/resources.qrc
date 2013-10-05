@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/images">
+    <qresource prefix="/">
         <file>icons/login.png</file>
         <file>icons/login_small.png</file>
         <file>icons/logout.png</file>
@@ -9,5 +9,18 @@
         <file>icons/book.png</file>
         <file>icons/edit.png</file>
         <file>icons/new.png</file>
+        <file>icons/align-center.png</file>
+        <file>icons/align-full.png</file>
+        <file>icons/align-left.png</file>
+        <file>icons/align-right.png</file>
+        <file>icons/bold.png</file>
+        <file>icons/copy.png</file>
+        <file>icons/cut.png</file>
+        <file>icons/italic.png</file>
+        <file>icons/paste.png</file>
+        <file>icons/redo.png</file>
+        <file>icons/underline.png</file>
+        <file>icons/undo.png</file>
+        <file>icons/link.png</file>
     </qresource>
 </RCC>

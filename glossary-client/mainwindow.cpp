@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     initUI();
+    textEdit=new TextEdit(ui->rtfEdit,ui->toolbarArea,this);
 }
 
 MainWindow::~MainWindow()
@@ -16,6 +17,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::initUI()
 {
+    this->setWindowTitle("Электронный глоссарий");
     // main layout
     QVBoxLayout * mainLayout=new QVBoxLayout();
     mainLayout->addWidget(ui->splitter);
@@ -45,4 +47,5 @@ void MainWindow::initUI()
 
     //edit panel
     ui->editPage->setLayout(ui->editLayout);
+    ui->stackedWidget->setCurrentIndex(0);
 }
