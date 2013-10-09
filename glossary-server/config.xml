@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!DOCTYPE config [
+  <!ELEMENT config (domains,users)>
+    <!ELEMENT domains (domain+)>
+      <!ELEMENT domain (#CDATA)>
+    
+	<!ATTLIST domain id ID #REQUIRED>
+      
+    <!ELEMENT users (user+)>
+      <!ELEMENT user (email,password,full_name)>
+    
+	<!ATTLIST user id ID #REQUIRED>
+	<!ATTLIST user domainid IDREF #IMPLIED>
+	<!ATTLIST user type (expert|user) #REQUIRED>
+	
+	<!ELEMENT email (#CDATA)>
+	<!ELEMENT password (#CDATA)>
+	<!ELEMENT full_name (#CDATA)>
+]>
+<config>
+  <domains>
+    <domain id="1">Трехмерная компьютерная графика</domain>
+  </domains>
+  <users>
+    <user id="1" type="expert" domainid="1">
+      <email>rgewebppc@gmail.com</email>
+      <password>12345</password>
+      <full_name>Глеб Романов</full_name>
+    </user>
+    <user id="2" type="user">
+      <email>vassya@gmail.com</email>
+      <password>1111</password>
+      <full_name>Вася Пупкин</full_name>
+    </user>
+  </users>
+</config>

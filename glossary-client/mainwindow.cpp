@@ -8,6 +8,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     initUI();
     textEdit=new TextEdit(ui->rtfEdit,ui->toolbarArea,this);
+    ui->rtfView->append("<a href='http://google.com/'>Some link</a>");
+    ui->rtfEdit->append("<a href='http://google.com/'>Some link</a>");
 }
 
 MainWindow::~MainWindow()
@@ -15,9 +17,20 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::onLinkClicked(QString uri)
+{
+    QDesktopServices::openUrl(QUrl(uri));
+}
+
 void MainWindow::initUI()
 {
     this->setWindowTitle("Электронный глоссарий");
+    ui->stackedWidget->setCurrentIndex(1);
+
+    ui->rtfView->setReadOnly(true);
+    connect(ui->rtfView,&TextEditor::linkClicked,this,&MainWindow::onLinkClicked);
+    connect(ui->rtfEdit,&TextEditor::linkClicked,this,&MainWindow::onLinkClicked);
+
     // main layout
     QVBoxLayout * mainLayout=new QVBoxLayout();
     mainLayout->addWidget(ui->splitter);
@@ -47,5 +60,4 @@ void MainWindow::initUI()
 
     //edit panel
     ui->editPage->setLayout(ui->editLayout);
-    ui->stackedWidget->setCurrentIndex(0);
 }

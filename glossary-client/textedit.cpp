@@ -162,6 +162,11 @@ void TextEdit::setupEditActions()
     actionTextColor = new QAction(pix, tr("&Цвет..."), this);
     connect(actionTextColor, SIGNAL(triggered()), this, SLOT(textColor()));
     tb->addAction(actionTextColor);
+    tb->addSeparator();
+    actionUrl=new QAction(QIcon(rsrcPath+"/link.png"),tr("Вставить гиперссылку..."),this);
+    connect(actionUrl,SIGNAL(triggered()),this,SLOT(textURL(QAction*)));
+    tb->addAction(actionUrl);
+
 }
 
 void TextEdit::setupTextActions()
@@ -341,6 +346,11 @@ void TextEdit::textAlign(QAction *a)
         textEdit->setAlignment(Qt::AlignRight | Qt::AlignAbsolute);
     else if (a == actionAlignJustify)
         textEdit->setAlignment(Qt::AlignJustify);
+}
+
+void TextEdit::textURL(QAction *a)
+{
+
 }
 
 void TextEdit::currentCharFormatChanged(const QTextCharFormat &format)

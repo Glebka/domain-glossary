@@ -48,6 +48,7 @@ private slots:
     void textStyle(int styleIndex);
     void textColor();
     void textAlign(QAction *a);
+    void textURL(QAction * a);
 
     void currentCharFormatChanged(const QTextCharFormat &format);
     void cursorPositionChanged();
@@ -75,6 +76,7 @@ private:
     QAction *actionCut;
     QAction *actionCopy;
     QAction *actionPaste;
+    QAction * actionUrl;
 
     QComboBox *comboStyle;
     QFontComboBox *comboFont;

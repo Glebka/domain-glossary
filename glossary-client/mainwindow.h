@@ -5,6 +5,8 @@
 #include <QVBoxLayout>
 #include <QList>
 #include <textedit.h>
+#include <QMessageBox>
+#include <QDesktopServices>
 
 namespace Ui {
 class MainWindow;
@@ -19,6 +21,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+public slots:
+    void onLinkClicked(QString uri);
 private:
     void initUI();
     TextEdit * textEdit;

@@ -15,11 +15,13 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     textedit.cpp \
-    logindialog.cpp
+    logindialog.cpp \
+    texteditor.cpp
 
 HEADERS  += mainwindow.h \
     textedit.h \
-    logindialog.h
+    logindialog.h \
+    texteditor.h
 
 FORMS    += mainwindow.ui \
     logindialog.ui

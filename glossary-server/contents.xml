@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<!DOCTYPE contents [
+  <!ELEMENT contents (terms,concepts)>
+  <!ELEMENT terms (term*)>
+    <!ELEMENT term (title,concept_list)>
+    
+      <!ATTLIST term id ID #REQUIRED>
+      <!ATTLIST term domainid IDREF #REQUIRED>
+      
+      <!ELEMENT title (#CDATA)>
+      <!ELEMENT concept_list (#CDATA)>
+      
+  <!ELEMENT concepts (concept*)>
+    <!ELEMENT concept (term_list,last_modified,keywords)>
+    
+      <!ATTLIST concept id ID #REQUIRED>
+      <!ATTLIST concept domainid IDREF #REQUIRED>
+      
+      <!ELEMENT term_list (#CDATA)>
+      <!ELEMENT last_modified (#CDATA)>
+      <!ELEMENT keywords (#CDATA)>
+]>
+<contents>
+  <terms>
+    <term id="1" domainid="1">
+      <title>Полигональная сетка</title>
+      <concept_list>1</concept_list>
+    </term>
+    <term id="2" domainid="1">
+      <title>Меш</title>
+      <concept_list>1</concept_list>
+    </term>
+    <term id="3" domainid="1">
+      <title>Рендеринг</title>
+      <concept_list>2</concept_list>
+    </term>
+  </terms>
+  <concepts>
+    <concept id="1" domainid="1">
+      <term_list>1|2</term_list>
+      <last_modified>2013-10-09</last_modified>
+      <keywords>mesh,рендеринг,треугольник,сетка,полигон</keywords>
+    </concept>
+    <concept id="2" domainid="1">
+      <term_list>3</term_list>
+      <last_modified>2013-10-09</last_modified>
+      <keywords>методы рендеринга,визуализация,модель,рендереры</keywords>
+    </concept>
+  </concepts>
+</contents>
+  
+    
+    
