@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core
+QT       += core network
 
 QT       -= gui
 
@@ -15,8 +15,14 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    listener.cpp \
+    clientworker.cpp
 
 OTHER_FILES += \
     contents.xml \
     config.xml
+
+HEADERS += \
+    listener.h \
+    clientworker.h
