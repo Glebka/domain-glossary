@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core network
+QT       += core network xml
 
 QT       -= gui
 
@@ -17,7 +17,8 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     listener.cpp \
-    clientworker.cpp
+    clientworker.cpp \
+    dataprovider.cpp
 
 OTHER_FILES += \
     contents.xml \
@@ -25,4 +26,5 @@ OTHER_FILES += \
 
 HEADERS += \
     listener.h \
-    clientworker.h
+    clientworker.h \
+    dataprovider.h
