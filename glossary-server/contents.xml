@@ -38,12 +38,12 @@
   <concepts>
     <concept id="1" domainid="1">
       <term_list>1|2</term_list>
-      <last_modified>2013-10-09</last_modified>
+      <last_modified>2013-10-09 00:00:00</last_modified>
       <keywords>mesh,рендеринг,треугольник,сетка,полигон</keywords>
     </concept>
     <concept id="2" domainid="1">
       <term_list>3</term_list>
-      <last_modified>2013-10-09</last_modified>
+      <last_modified>2013-10-09 00:00:00</last_modified>
       <keywords>методы рендеринга,визуализация,модель,рендереры</keywords>
     </concept>
   </concepts>
