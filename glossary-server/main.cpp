@@ -7,7 +7,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     DataProvider provider;
-    provider.init();
+    //provider.initFromXml();
+    provider.initFromBinary();
 
     Listener server;
     if(!server.listen(QHostAddress::AnyIPv4,1111))
@@ -16,5 +17,6 @@ int main(int argc, char *argv[])
     }
     provider.configToXML();
     provider.contentsToXML();
+    //provider.contentsToBin();
     return a.exec();
 }

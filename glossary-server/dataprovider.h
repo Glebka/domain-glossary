@@ -12,6 +12,7 @@
 #include <QList>
 #include <QStringList>
 #include <QDateTime>
+#include <QDataStream>
 
 #include <QDebug>
 
@@ -54,6 +55,7 @@
 
 #define DATE_TIME_FORMAT    "yyyy-MM-dd hh:mm:ss"
 
+
 class IdList : public QList<quint32>
 {
 public:
@@ -61,6 +63,11 @@ public:
 };
 
 enum UserType {User,Expert};
+
+const quint32 TERM_INFO_START=0x100;
+const quint32 TERM_INFO_END=0x101;
+const quint32 CONCEPT_INFO_START=0x102;
+const quint32 CONCEPT_INFO_END=0x103;
 
 struct UserInfo
 {
@@ -97,10 +104,12 @@ public:
     explicit DataProvider(QObject *parent = 0);
     ~DataProvider();
 
-    bool init();
+    bool initFromXml();
+    bool initFromBinary();
 
     void configToXML();
     void contentsToXML();
+    void contentsToBin();
 
 signals:
 
@@ -109,6 +118,7 @@ public slots:
 private:
 
     void log(QString text);
+    bool initConfig();
 
     QMap<quint32,QString> * m_domains_by_id;
     QMap<quint32,UserInfo *> * m_users_by_id;

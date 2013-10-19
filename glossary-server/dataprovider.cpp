@@ -1,5 +1,71 @@
 #include "dataprovider.h"
 
+QDataStream & operator <<(QDataStream &out, const TermInfo & ti)
+{
+    out<<TERM_INFO_START;
+    out<<ti.id;
+    out<<ti.domain_id;
+    out<<ti.title;
+    out<<ti.concept_list;
+    out<<TERM_INFO_END;
+    return out;
+}
+
+QDataStream & operator <<(QDataStream &out, const ConceptInfo & ci)
+{
+    out<<CONCEPT_INFO_START;
+    out<<ci.id;
+    out<<ci.domain_id;
+    out<<(QList<quint32>)ci.term_list;
+    out<<(QList<QString>)ci.keywords;
+    out<<ci.last_modified;
+    out<<CONCEPT_INFO_END;
+    return out;
+}
+
+QDataStream & operator >>(QDataStream &out, TermInfo & ti)
+{
+    quint32 start_flag;
+    quint32 stop_flag;
+
+    //TermInfo tmp;
+
+    out>>start_flag;
+    out>>ti.id;
+    out>>ti.domain_id;
+    out>>ti.title;
+    out>>ti.concept_list;
+    out>>stop_flag;
+
+    if(start_flag!=TERM_INFO_START || stop_flag!=TERM_INFO_END)
+        qDebug()<<"Broken TermInfo Structure";
+
+    return out;
+}
+
+QDataStream & operator >>(QDataStream &out, ConceptInfo & ci)
+{
+    quint32 start_flag;
+    quint32 stop_flag;
+
+    ConceptInfo tmp;
+
+    out>>start_flag;
+    out>>tmp.id;
+    out>>tmp.domain_id;
+    out>>tmp.term_list;
+    out>>tmp.keywords;
+    out>>tmp.last_modified;
+    out>>stop_flag;
+
+    if(start_flag==CONCEPT_INFO_START && stop_flag==CONCEPT_INFO_END)
+        ci=tmp;
+    else
+        qDebug()<<"Broken ConceptInfo Structure";
+
+    return out;
+}
+
 DataProvider::DataProvider(QObject *parent) :
     QObject(parent),
     m_concepts(0),
@@ -32,24 +98,12 @@ DataProvider::~DataProvider()
         delete[] m_concepts;
 }
 
-bool DataProvider::init()
+bool DataProvider::initFromXml()
 {
+    initConfig();
+
     QDomDocument contents(CONTENTS_TAG);
-    QDomDocument config(CONFIG_TAG);
-    QFile config_file(CONFIG_FILE);
     QFile contents_file(CONTENTS_FILE);
-
-    if(!config_file.open(QIODevice::ReadOnly))
-    {
-        log("Failed to load config file.");
-        return false;
-    }
-    if(!config.setContent(&config_file))
-    {
-        log("Failed to load XML from config file.");
-        return false;
-    }
-
     if(!contents_file.open(QIODevice::ReadOnly))
     {
         log("Failed to load contents file.");
@@ -60,66 +114,11 @@ bool DataProvider::init()
         log("Failed to load XML from contents file.");
         return false;
     }
-    config_file.close();
     contents_file.close();
-
-    // loading config
-
-    QDomNode domains = config.documentElement().firstChild();
-    /*if(!domains.hasChildNodes() || domains.nodeName()!=DOMAINS_TAG)
-    {
-        log("Invalid XML. No domains data.");
-        return false;
-    }*/
-    QDomNode domain=domains.firstChild();
     QDomElement e;
-    while(!domain.isNull())
-    {
-        e = domain.toElement(); // try to convert the node to an element.
-        if(!e.isNull()) {
-            m_domains_by_id->insert(e.attributes().namedItem(ID_ATTR).nodeValue().toUInt(),e.text());
-            log(e.attributes().namedItem(ID_ATTR).nodeValue());
-            log(e.text());
-        }
-        domain=domain.nextSibling();
-    }
-
-    QDomNode usersNode=domains.nextSibling();
-    /*if(!users.hasChildNodes() || users.nodeName()!=USERS_TAG)
-    {
-        log("Invalid XML. No users data.");
-        return false;
-    }*/
-    QDomNode user=usersNode.firstChild();
-    m_users=new UserInfo[usersNode.childNodes().size()];
-    int index=0;
-    while(!user.isNull())
-    {
-        e = user.toElement(); // try to convert the node to an element.
-        if(!e.isNull()) {
-            m_users[index].id=e.attributes().namedItem(ID_ATTR).nodeValue().toUInt();
-            if(e.attributes().contains(DOMAIN_ID_ATTR))
-            {
-                m_users[index].domain_id=e.attributes().namedItem(DOMAIN_ID_ATTR).nodeValue().toInt();
-                m_users[index].type=Expert;
-            }
-            else
-            {
-                m_users[index].type=User;
-                m_users[index].domain_id=0;
-            }
-            m_users[index].email=e.namedItem(EMAIL_TAG).toElement().text();
-            m_users[index].password=e.namedItem(PASSWORD_TAG).toElement().text();
-            m_users[index].full_name=e.namedItem(FULL_NAME_TAG).toElement().text();
-            m_users_by_id->insert(m_users[index].id,&m_users[index]);
-            m_users_by_domain->insertMulti(m_users[index].domain_id,&m_users[index]);
-            index++;
-        }
-        user=user.nextSibling();
-    }
     QDomNode termsNode=contents.documentElement().firstChild();
     m_terms=new TermInfo[termsNode.childNodes().size()];
-    index=0;
+    int index=0;
     QDomNode term=termsNode.firstChild();
     while(!term.isNull())
     {
@@ -140,7 +139,7 @@ bool DataProvider::init()
         term=term.nextSibling();
     }
     QDomNode conceptsNode=termsNode.nextSibling();
-    ConceptInfo * m_concepts=new ConceptInfo[conceptsNode.childNodes().size()];
+    m_concepts=new ConceptInfo[conceptsNode.childNodes().size()];
     QDomNode concept=conceptsNode.firstChild();
     index=0;
     while(!concept.isNull())
@@ -163,6 +162,43 @@ bool DataProvider::init()
             index++;
         }
         concept=concept.nextSibling();
+    }
+}
+
+bool DataProvider::initFromBinary()
+{
+    initConfig();
+    QFile contents_file("contents.dat");
+    if(!contents_file.open(QIODevice::ReadOnly))
+    {
+        log("Failed to load contents file.");
+        return false;
+    }
+    QDataStream stream(&contents_file);
+    quint32 index;
+    quint32 size;
+    stream>>size;
+    m_terms=new TermInfo[size];
+    for(index=0;index<size;index++)
+    {
+        //TermInfo ti;
+        stream>>m_terms[index];
+        //=ti;
+        m_term_by_id->insert(m_terms[index].id,&m_terms[index]);
+        m_terms_by_name->insertMulti(m_terms[index].title.toLower(),&m_terms[index]);
+    }
+    index=0;
+    stream>>size;
+    m_concepts=new ConceptInfo[size];
+    //memset(m_concepts,0,sizeof(ConceptInfo)*size);
+    for(index=0;index<size;index++)
+    {
+        stream>>m_concepts[index];
+        m_concept_by_id->insert(m_concepts[index].id,&m_concepts[index]);
+        foreach (QString keyword, m_concepts[index].keywords) {
+            m_concepts_by_keyword->insertMulti(keyword,&m_concepts[index]);
+        }
+
     }
 }
 
@@ -231,11 +267,13 @@ void DataProvider::contentsToXML()
         log("Failed to open contents file for writing.");
         return;
     }
+
     QXmlStreamWriter writer(&output);
     writer.setAutoFormatting(true);
     writer.writeStartDocument("1.0");
     writer.writeStartElement(CONTENTS_TAG);
     writer.writeStartElement(TERMS_TAG);
+
     QMapIterator<quint32,TermInfo *> itt(*m_term_by_id);
     while(itt.hasNext())
     {
@@ -254,6 +292,7 @@ void DataProvider::contentsToXML()
     }
     writer.writeEndElement();
     writer.writeStartElement(CONCEPTS_TAG);
+
     QMapIterator<quint32,ConceptInfo *> itc(*m_concept_by_id);
     while(itc.hasNext())
     {
@@ -277,9 +316,100 @@ void DataProvider::contentsToXML()
     output.close();
 }
 
+void DataProvider::contentsToBin()
+{
+    QFile binout("contents.dat");
+    if(!binout.open(QIODevice::WriteOnly))
+    {
+        log("Failed to open contents binary file for writing.");
+        return;
+    }
+    QDataStream stream(&binout);
+
+    stream<<(quint32)m_term_by_id->size();
+    QMapIterator<quint32,TermInfo *> itt(*m_term_by_id);
+    const TermInfo * ti;
+    while(itt.hasNext())
+    {
+        ti=itt.next().value();
+        stream<<(*ti);
+    }
+    stream<<(quint32)m_concept_by_id->size();
+    QMapIterator<quint32,ConceptInfo *> itc(*m_concept_by_id);
+    const ConceptInfo * ci;
+    while(itc.hasNext())
+    {
+        ci=itc.next().value();
+        stream<<(*ci);
+    }
+    binout.close();
+}
+
 void DataProvider::log(QString text)
 {
     qDebug()<<"[DataProvider] "<<text;
+}
+
+bool DataProvider::initConfig()
+{
+    QDomDocument config(CONFIG_TAG);
+    QFile config_file(CONFIG_FILE);
+    if(!config_file.open(QIODevice::ReadOnly))
+    {
+        log("Failed to load config file.");
+        return false;
+    }
+    if(!config.setContent(&config_file))
+    {
+        log("Failed to load XML from config file.");
+        return false;
+    }
+    config_file.close();
+
+    // loading config
+
+    QDomNode domains = config.documentElement().firstChild();
+    QDomNode domain=domains.firstChild();
+    QDomElement e;
+    while(!domain.isNull())
+    {
+        e = domain.toElement(); // try to convert the node to an element.
+        if(!e.isNull()) {
+            m_domains_by_id->insert(e.attributes().namedItem(ID_ATTR).nodeValue().toUInt(),e.text());
+            log(e.attributes().namedItem(ID_ATTR).nodeValue());
+            log(e.text());
+        }
+        domain=domain.nextSibling();
+    }
+
+    QDomNode usersNode=domains.nextSibling();
+    QDomNode user=usersNode.firstChild();
+    m_users=new UserInfo[usersNode.childNodes().size()];
+    int index=0;
+    while(!user.isNull())
+    {
+        e = user.toElement(); // try to convert the node to an element.
+        if(!e.isNull()) {
+            m_users[index].id=e.attributes().namedItem(ID_ATTR).nodeValue().toUInt();
+            if(e.attributes().contains(DOMAIN_ID_ATTR))
+            {
+                m_users[index].domain_id=e.attributes().namedItem(DOMAIN_ID_ATTR).nodeValue().toInt();
+                m_users[index].type=Expert;
+            }
+            else
+            {
+                m_users[index].type=User;
+                m_users[index].domain_id=0;
+            }
+            m_users[index].email=e.namedItem(EMAIL_TAG).toElement().text();
+            m_users[index].password=e.namedItem(PASSWORD_TAG).toElement().text();
+            m_users[index].full_name=e.namedItem(FULL_NAME_TAG).toElement().text();
+            m_users_by_id->insert(m_users[index].id,&m_users[index]);
+            m_users_by_domain->insertMulti(m_users[index].domain_id,&m_users[index]);
+            index++;
+        }
+        user=user.nextSibling();
+    }
 }
 
 
