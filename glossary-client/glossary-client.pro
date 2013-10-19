@@ -16,15 +16,18 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     textedit.cpp \
     logindialog.cpp \
-    texteditor.cpp
+    texteditor.cpp \
+    addlinkdialog.cpp
 
 HEADERS  += mainwindow.h \
     textedit.h \
     logindialog.h \
-    texteditor.h
+    texteditor.h \
+    addlinkdialog.h
 
 FORMS    += mainwindow.ui \
-    logindialog.ui
+    logindialog.ui \
+    addlinkdialog.ui
 
 RESOURCES += \
     resources.qrc
