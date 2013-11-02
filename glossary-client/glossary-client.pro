@@ -4,9 +4,11 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+CONFIG += c++11
 
 TARGET = glossary-client
 TEMPLATE = app
@@ -17,13 +19,15 @@ SOURCES += main.cpp\
     textedit.cpp \
     logindialog.cpp \
     texteditor.cpp \
-    addlinkdialog.cpp
+    addlinkdialog.cpp \
+    common.cpp
 
 HEADERS  += mainwindow.h \
     textedit.h \
     logindialog.h \
     texteditor.h \
-    addlinkdialog.h
+    addlinkdialog.h \
+    common.h
 
 FORMS    += mainwindow.ui \
     logindialog.ui \

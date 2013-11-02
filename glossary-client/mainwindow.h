@@ -7,6 +7,11 @@
 #include <textedit.h>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QTcpSocket>
+#include <QHostAddress>
+#include <QDataStream>
+
+#include <common.h>
 
 namespace Ui {
 class MainWindow;
@@ -26,6 +31,7 @@ public slots:
 private:
     void initUI();
     TextEdit * textEdit;
+    QTcpSocket * m_socket;
 };
 
 #endif // MAINWINDOW_H

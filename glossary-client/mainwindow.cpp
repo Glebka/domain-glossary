@@ -10,6 +10,29 @@ MainWindow::MainWindow(QWidget *parent) :
     textEdit=new TextEdit(ui->rtfEdit,ui->toolbarArea,this);
     ui->rtfView->append("<a href='http://google.com/'>Some link</a>");
     ui->rtfEdit->append("<a href='http://google.com/'>Some link</a>");
+    m_socket=new QTcpSocket(this);
+    m_socket->connectToHost(QHostAddress("127.0.0.1"),1111);
+    QTcpSocket * socket=m_socket;
+    connect(m_socket,&QTcpSocket::connected,[socket](){
+        QDataStream stream(socket);
+        stream<<CMD_LOGIN;
+        stream<<QString("rgewebppc@gmail.com");
+        stream<<QString("12345");
+    });
+    connect(m_socket,&QTcpSocket::readyRead,[socket](){
+        QDataStream stream(socket);
+        quint32 code;
+        stream>>code;
+        if(code==CMD_OK)
+        {
+            qDebug()<<"Login OK!";
+            UserInfo ui;
+            stream>>ui;
+            qDebug()<<ui.full_name;
+        }
+        else
+            qDebug()<<"Error on login!";
+    });
 }
 
 MainWindow::~MainWindow()

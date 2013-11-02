@@ -6,12 +6,14 @@ set(project_sources
     listener.cpp
     clientworker.cpp
     dataprovider.cpp
+    common.cpp
 )
 
 set(project_headers
     listener.h
     clientworker.h
     dataprovider.h
+    common.h
 )
 
 if(NOT CMAKE_BUILD_TYPE)
