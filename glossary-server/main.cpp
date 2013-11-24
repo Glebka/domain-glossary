@@ -24,6 +24,6 @@ int main(int argc, char *argv[])
     }
     //provider.configToXML();
     //provider.contentsToXML();
-    //provider.contentsToBin();
+    //provider.contentsToBin();    
     return a.exec();
 }

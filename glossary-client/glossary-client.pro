@@ -20,14 +20,18 @@ SOURCES += main.cpp\
     logindialog.cpp \
     texteditor.cpp \
     addlinkdialog.cpp \
-    common.cpp
+    common.cpp \
+    requestbuilder.cpp \
+    clientsideproxy.cpp
 
 HEADERS  += mainwindow.h \
     textedit.h \
     logindialog.h \
     texteditor.h \
     addlinkdialog.h \
-    common.h
+    common.h \
+    requestbuilder.h \
+    clientsideproxy.h
 
 FORMS    += mainwindow.ui \
     logindialog.ui \

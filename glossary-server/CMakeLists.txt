@@ -7,6 +7,7 @@ set(project_sources
     clientworker.cpp
     dataprovider.cpp
     common.cpp
+    serviceprovider.cpp
 )
 
 set(project_headers
@@ -14,6 +15,7 @@ set(project_headers
     clientworker.h
     dataprovider.h
     common.h
+    serviceprovider.h
 )
 
 if(NOT CMAKE_BUILD_TYPE)

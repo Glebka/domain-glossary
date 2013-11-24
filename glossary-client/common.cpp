@@ -172,3 +172,25 @@ QDataStream &operator >>(QDataStream &out, TermDefinition &td)
 
     return out;
 }
+
+
+QDataStream &operator <<(QDataStream &out, const PacketHeader &ph)
+{
+    out<<ph.start_flag;
+    out<<ph.uid;
+    out<<ph.command;
+    out<<ph.status;
+    out<<ph.data_length;
+    return out;
+}
+
+
+QDataStream &operator >>(QDataStream &out, PacketHeader &ph)
+{
+    out>>ph.start_flag;
+    out>>ph.uid;
+    out>>ph.command;
+    out>>ph.status;
+    out>>ph.data_length;
+    return out;
+}

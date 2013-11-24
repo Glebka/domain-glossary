@@ -7,6 +7,7 @@
 #include <QDebug>
 
 #include <clientworker.h>
+#include <serviceprovider.h>
 
 struct Record
 {
@@ -27,7 +28,7 @@ protected:
 private:
 
     QMap<ClientWorker *,Record> m_clients;
-
+    void log(QString text);
 };
 
 #endif // LISTENER_H

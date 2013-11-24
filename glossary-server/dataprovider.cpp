@@ -16,6 +16,7 @@ DataProvider::DataProvider(QObject *parent)
     , m_users_by_domain(0)
     , m_users_by_id(0)
     , m_users_by_login(0)
+    , m_term_by_domain_id(0)
 
 {
     qRegisterMetaType<TermInfo>("TermInfo");
@@ -35,6 +36,7 @@ DataProvider::~DataProvider()
     delete m_term_by_id;
     delete m_users_by_domain;
     delete m_users_by_id;
+    delete m_term_by_domain_id;
     if(m_users)
         delete[] m_users;
     if(m_terms)
@@ -85,6 +87,7 @@ bool DataProvider::initFromXml()
             }
             m_term_by_id->insert(m_terms[index].id,&m_terms[index]);
             m_terms_by_name->insertMulti(m_terms[index].title.toLower(),&m_terms[index]);
+            m_term_by_domain_id->insertMulti(m_terms[index].domain_id,&m_terms[index]);
             index++;
         }
         term=term.nextSibling();
@@ -122,7 +125,7 @@ bool DataProvider::initFromXml()
 
 bool DataProvider::initFromBinary()
 {
-    Q_ASSERT(initConfig());
+    //Q_ASSERT(initConfig());
     if(!initConfig()) return false;
 
     QFile contents_file("contents.dat");
@@ -148,6 +151,7 @@ bool DataProvider::initFromBinary()
         stream>>m_terms[index];
         m_term_by_id->insert(m_terms[index].id,&m_terms[index]);
         m_terms_by_name->insertMulti(m_terms[index].title.toLower(),&m_terms[index]);
+        m_term_by_domain_id->insertMulti(m_terms[index].domain_id,&m_terms[index]);
     }
     index=0;
     stream>>size;
@@ -181,12 +185,12 @@ void DataProvider::configToXML()
     writer.writeStartDocument("1.0");
     writer.writeStartElement(CONFIG_TAG);
     writer.writeStartElement(DOMAINS_TAG);
-    QMapIterator<quint32,QString> it(*m_domains_by_id);
+    QMapIterator<quint32,DomainInfo *> it(*m_domains_by_id);
     while(it.hasNext())
     {
         writer.writeStartElement(DOMAIN_TAG);
         writer.writeAttribute(ID_ATTR,QString::number(it.peekNext().key()));
-        writer.writeCharacters(it.next().value());
+        writer.writeCharacters(it.next().value()->title);
         writer.writeEndElement();
     }
     writer.writeEndElement();
@@ -327,114 +331,169 @@ DataProvider *DataProvider::getInstance()
         connect(m_instance,&DataProvider::ready,&loop,&QEventLoop::quit);
         m_thread->start();
         loop.exec();
-        qDebug()<<"DataProvider initialized";
+        m_instance->log("Initialized");
     }
     return m_instance;
 }
 
+const QMap<quint32, DomainInfo *> *DataProvider::domainsById()
+{
+    return m_domains_by_id;
+}
+
+const QMap<quint32, UserInfo *> *DataProvider::usersById()
+{
+    return m_users_by_id;
+}
+
+const QMap<QString, UserInfo *> *DataProvider::usersByLogin()
+{
+    return m_users_by_login;
+}
+
+const QMultiMap<quint32, UserInfo *> *DataProvider::usersByDomain()
+{
+    return m_users_by_domain;
+}
+
+const QMap<quint32, DomainInfo *> *DataProvider::allDomains()
+{
+    return m_domains_by_id;
+}
+
+const QMap<quint32, TermInfo *> *DataProvider::rdLockTermsById()
+{
+    m_lockers[TermById].lockForRead();
+    return m_term_by_id;
+}
+
+QMap<quint32, TermInfo *> *DataProvider::wrLockTermsById()
+{
+    m_lockers[TermById].lockForWrite();
+    return m_term_by_id;
+}
+
+const QMultiMap<quint32, TermInfo *> *DataProvider::rdLockTermsByDomainId()
+{
+    m_lockers[TermByDomainId].lockForRead();
+    return m_term_by_domain_id;
+}
+
+QMultiMap<quint32, TermInfo *> *DataProvider::wrLockTermsByDomainId()
+{
+    m_lockers[TermByDomainId].lockForWrite();
+    return m_term_by_domain_id;
+}
+
+const QMap<quint32, ConceptInfo *> *DataProvider::rdLockConceptById()
+{
+    m_lockers[ConceptById].lockForRead();
+    return m_concept_by_id;
+}
+
+QMap<quint32, ConceptInfo *> *DataProvider::wrLockConceptById()
+{
+    m_lockers[ConceptById].lockForWrite();
+    return m_concept_by_id;
+}
+
+const QMultiHash<QString, TermInfo *> *DataProvider::rdLockTermsByName()
+{
+    m_lockers[TermByName].lockForRead();
+    return m_terms_by_name;
+}
+
+QMultiHash<QString, TermInfo *> *DataProvider::wrLockTermsByName()
+{
+    m_lockers[TermByName].lockForWrite();
+    return m_terms_by_name;
+}
+
+const QMultiHash<QString, ConceptInfo *> *DataProvider::rdLockConceptsByKeyword()
+{
+    m_lockers[ConceptByKeyword].lockForRead();
+    return m_concepts_by_keyword;
+}
+
+QMultiHash<QString, ConceptInfo *> *DataProvider::wrLockConceptsByKeyword()
+{
+    m_lockers[ConceptByKeyword].lockForWrite();
+    return m_concepts_by_keyword;
+}
+
+QString DataProvider::getConceptFileContents(quint32 conceptId)
+{
+    quint8 * id_path=(quint8 *)&conceptId;
+    QStringList pathList;
+    pathList<<DATA_DIRECTORY
+            <<QString::number(id_path[0],16)
+            <<QString::number(id_path[1],16)
+            <<QString::number(id_path[2],16)
+            <<QString::number(id_path[3],16);
+    QString path=pathList.join("/");
+    path.append(EXTENSION);
+    log("Will open concept file: "+path);
+    int fdesc=open(path.toStdString().c_str(),O_RDONLY);
+    if(fdesc==-1)
+    {
+        log("Can't open concept file: "+path);
+        return QString();
+    }
+    flock lock;
+    lock.l_type=F_RDLCK;
+    lock.l_whence=SEEK_SET;
+    lock.l_start=0;
+    lock.l_len=0;
+    int lockRes=fcntl(fdesc,F_SETLKW,&lock);
+    if(lockRes==-1)
+    {
+        log("Can't set RDLOCK to concept file: "+path);
+        close(fdesc);
+        return QString();
+    }
+    QFile file;
+    Q_ASSERT(file.open(fdesc,QIODevice::ReadOnly));
+    QTextStream textStream(&file);
+    QString content=textStream.readAll();
+    file.close();
+    close(fdesc);
+    return content;
+}
+
+void DataProvider::lockRead()
+{
+    for(int i=0;i<4;i++)
+        m_lockers[i].lockForRead();
+}
+
+void DataProvider::lockWrite()
+{
+    for(int i=0;i<4;i++)
+        m_lockers[i].lockForWrite();
+}
+
+
+void DataProvider::unlock()
+{
+    for(int i=0;i<LOCKERS_COUNT;i++)
+        m_lockers[i].unlock();
+}
+
 void DataProvider::run()
 {
+    qDebug()<<"Running...";
     m_concepts_by_keyword=new QMultiHash<QString,ConceptInfo *>();
     m_concept_by_id=new QMap<quint32,ConceptInfo *>();
-    m_domains_by_id=new QMap<quint32,QString>();
+    m_domains_by_id=new QMap<quint32,DomainInfo *>();
     m_terms_by_name=new QMultiHash<QString,TermInfo *>();
     m_term_by_id=new QMap<quint32,TermInfo *>();
     m_users_by_domain=new QMultiMap<quint32,UserInfo *>();
     m_users_by_id=new QMap<quint32,UserInfo *>();
     m_users_by_login=new QMap<QString,UserInfo *>();
-    if(initFromBinary())
+    m_term_by_domain_id=new QMultiMap<quint32,TermInfo *>();
+    //if(initFromBinary())
+    if(initFromXml())
         emit ready();
-}
-
-void DataProvider::getTermDefinition(quint32 termId)
-{
-
-}
-
-void DataProvider::addTerm(quint32 domainId, QString term, quint32 conceptId)
-{
-
-}
-
-void DataProvider::addTerm(quint32 domainId, QString term, QStringList keywords, QString text)
-{
-
-}
-
-void DataProvider::editTerm(quint32 termid, quint32 conceptId, QString term, QStringList keywords, QString text)
-{
-
-}
-
-void DataProvider::requestTermDefinition(quint32 domainId, QString term)
-{
-
-}
-
-void DataProvider::login(QString user, QString password)
-{
-    UserInfo * ui=m_users_by_login->value(user,0);
-    UserInfo instance;
-    bool success=true;
-    if(!ui || (password!=ui->password))
-        success=false;
-    else
-        instance=*ui;
-    QMetaObject::invokeMethod(this->sender(),ON_LOGIN,Qt::QueuedConnection,Q_ARG(UserInfo,instance),Q_ARG(bool,success));
-}
-
-void DataProvider::getAllTerms()
-{
-    TermList terms;
-    QListIterator<TermInfo *>it(m_term_by_id->values());
-    while(it.hasNext())
-    {
-        TermInfo * ti=it.next();
-        terms<<*ti;
-    }
-    QMetaObject::invokeMethod(this->sender(),ON_GET_ALL_TERMS,Qt::QueuedConnection,Q_ARG(TermList,terms));
-}
-
-void DataProvider::getTermsByDomain(quint32 domainId)
-{
-
-}
-
-void DataProvider::getAllDomains()
-{
-    DomainList domains;
-    QList<quint32> keys=m_domains_by_id->keys();
-    QListIterator<quint32> it(keys);
-    while(it.hasNext())
-    {
-        DomainInfo di;
-        di.id=it.peekNext();
-        di.title=m_domains_by_id->value(it.next());
-        domains<<di;
-    }
-    QMetaObject::invokeMethod(this->sender(),ON_GET_ALL_DOMAINS,Qt::QueuedConnection,Q_ARG(DomainList,domains));
-}
-
-void DataProvider::search(QString search)
-{
-
-}
-
-void DataProvider::getDomainById(quint32 domainId)
-{
-
-}
-
-void DataProvider::getUserById(quint32 userId)
-{
-    UserInfo * ui=m_users_by_id->value(userId,0);
-    UserInfo instance;
-    bool success=true;
-    if(!ui)
-        success=false;
-    else
-        instance=*ui;
-    QMetaObject::invokeMethod(this->sender(),ON_GET_USER_BY_ID,Qt::QueuedConnection,Q_ARG(UserInfo,instance),Q_ARG(bool,success));
 }
 
 void DataProvider::log(QString text)
@@ -467,7 +526,11 @@ bool DataProvider::initConfig()
     {
         e = domain.toElement(); // try to convert the node to an element.
         if(!e.isNull()) {
-            m_domains_by_id->insert(e.attributes().namedItem(ID_ATTR).nodeValue().toUInt(),e.text());
+            DomainInfo * di=new DomainInfo;
+            di->id=e.attributes().namedItem(ID_ATTR).nodeValue().toUInt();
+            di->title=e.text();
+            m_domains_by_id->insert(di->id,di);
+            //qDebug()<<di->title;
             //log(e.attributes().namedItem(ID_ATTR).nodeValue());
             //log(e.text());
         }
@@ -505,7 +568,6 @@ bool DataProvider::initConfig()
     }
     return true;
 }
-
 
 QString IdList::toString(QString separator) const
 {
