@@ -132,7 +132,7 @@ void MainWindow::loadIndex()
     QAbstractItemModel * old=ui->termsList->model();
     if(old)
         delete old;
-    TermIndexModel * model=new TermIndexModel(m_request,this);
+    TermIndexModel * model=new TermIndexModel(m_request,&m_domains_info,this);
     ui->termsList->setModel(model);
 }
 
@@ -358,7 +358,8 @@ void MainWindow::on_actionRequest_triggered()
 
 void MainWindow::on_actionAddTerm_triggered()
 {
-
+    AddTermDialog dialog(m_request,ui->termsList->model(),&m_domains_info,this);
+    dialog.exec();
 }
 
 void MainWindow::on_actionEdit_triggered()

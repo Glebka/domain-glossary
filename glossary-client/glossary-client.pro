@@ -23,7 +23,8 @@ SOURCES += main.cpp\
     common.cpp \
     requestbuilder.cpp \
     clientsideproxy.cpp \
-    termindexmodel.cpp
+    termindexmodel.cpp \
+    addtermdialog.cpp
 
 HEADERS  += mainwindow.h \
     textedit.h \
@@ -34,11 +35,13 @@ HEADERS  += mainwindow.h \
     requestbuilder.h \
     clientsideproxy.h \
     termindexmodel.h \
-    main.h
+    main.h \
+    addtermdialog.h
 
 FORMS    += mainwindow.ui \
     logindialog.ui \
-    addlinkdialog.ui
+    addlinkdialog.ui \
+    addtermdialog.ui
 
 RESOURCES += \
     resources.qrc

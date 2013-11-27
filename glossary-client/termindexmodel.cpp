@@ -1,10 +1,11 @@
 #include "termindexmodel.h"
 
-TermIndexModel::TermIndexModel(RequestBuilder *builder, QObject *parent) :
+TermIndexModel::TermIndexModel(RequestBuilder *builder, QMap<quint32, DomainInfo> *domains, QObject *parent) :
     QAbstractListModel(parent)
   ,m_request(builder)
   ,is_requested(false)
   ,can_fetch(true)
+  ,m_domains(domains)
 {
     startTimer(1000);
     connect(m_request,&RequestBuilder::loadTerms,this,&TermIndexModel::onTermsFetched);
@@ -50,11 +51,18 @@ QVariant TermIndexModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
-
-    if (role != Qt::DisplayRole)
-        return QVariant();
     TermInfo *item = static_cast<TermInfo*>(index.internalPointer());
-    return item->title;
+    switch (role) {
+    case Qt::ToolTipRole:
+        if(m_domains->contains(item->domain_id))
+            return item->title+" ("+m_domains->value(item->domain_id).title.toLower()+")";
+        else
+            return item->title;
+    case Qt::DisplayRole:
+        return item->title;
+    default:
+        return QVariant();
+    }
 }
 
 void TermIndexModel::fetchMore(const QModelIndex &parent)

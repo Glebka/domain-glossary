@@ -17,6 +17,7 @@
 #include <common.h>
 #include <requestbuilder.h>
 #include <termindexmodel.h>
+#include <addtermdialog.h>
 
 enum ItemType {Root,Domain,Term};
 

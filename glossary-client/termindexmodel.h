@@ -7,12 +7,14 @@
 #include <requestbuilder.h>
 
 #define PORTION_SIZE 20
+// ONE REPUBLIC - Counting Stars
+//P!NK - Just Give Me A Reason
 
 class TermIndexModel : public QAbstractListModel
 {
     Q_OBJECT
 public:
-    explicit TermIndexModel(RequestBuilder * builder,QObject *parent = 0);
+    explicit TermIndexModel(RequestBuilder * builder,QMap<quint32,DomainInfo> * domains,QObject *parent = 0);
 signals:
 public slots:
     void onTermsFetched(QList<TermInfo> terms);
@@ -30,6 +32,7 @@ private:
     mutable bool is_requested;
     mutable bool can_fetch;
     void request() const;
+    QMap<quint32,DomainInfo> * m_domains;
 
     // QAbstractItemModel interface
 
