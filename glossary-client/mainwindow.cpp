@@ -9,11 +9,11 @@ MainWindow::MainWindow(RequestBuilder *builder, QWidget *parent) :
     ui->setupUi(this);
     initUI();
     textEdit=new TextEdit(ui->rtfEdit,ui->toolbarArea,this);
-    ui->rtfView->append("<a href='http://google.com/'>Some link</a>");
-    ui->rtfEdit->append("<a href='http://google.com/'>Some link</a>");
+    //ui->rtfView->append("<a href='http://google.com/'>Some link</a>");
+    //ui->rtfEdit->append("<a href='http://google.com/'>Some link</a>");
     foreach (QAction * act, ui->mainToolBar->actions()) {
         act->setEnabled(false);
-    }
+    }   
     /*m_socket=new QTcpSocket(this);
     m_socket->connectToHost(QHostAddress("127.0.0.1"),1111);
     QTcpSocket * socket=m_socket;
@@ -41,7 +41,15 @@ MainWindow::MainWindow(RequestBuilder *builder, QWidget *parent) :
 
 void MainWindow::loadData()
 {
+    qRegisterMetaType<QVector<int>>("QVector<int>");
     loadTree();
+    loadIndex();
+    foreach (QAction * act, ui->mainToolBar->actions()) {
+        act->setEnabled(true);
+    }
+    ui->actionEdit->setEnabled(false);
+    if(m_request->user.type!=Expert)
+        ui->actionAddTerm->setEnabled(false);
 }
 
 void MainWindow::loadTree()
@@ -82,6 +90,7 @@ void MainWindow::loadTree()
             item->addChild(new QTreeWidgetItem());
             item->setData(0,Qt::UserRole,QVariant(di.id));
             item->setData(1,Qt::UserRole,QVariant(Domain));
+            item->setToolTip(0,di.title);
             this->m_domains[di.id]=item;
             this->m_domains_info[di.id]=di;
         }
@@ -97,6 +106,7 @@ void MainWindow::loadTree()
             item->setText(0,ti.title);
             item->setData(0,Qt::UserRole,QVariant(ti.id));
             item->setData(1,Qt::UserRole,QVariant(Term));
+            item->setToolTip(0,ti.title);
             QByteArray data;
             QDataStream stream(&data,QIODevice::WriteOnly);
             stream<<ti;
@@ -117,10 +127,38 @@ void MainWindow::loadTree()
     });
 }
 
+void MainWindow::loadIndex()
+{
+    QAbstractItemModel * old=ui->termsList->model();
+    if(old)
+        delete old;
+    TermIndexModel * model=new TermIndexModel(m_request,this);
+    ui->termsList->setModel(model);
+}
+
 void MainWindow::showTerm(TermInfo &ti)
 {
-    if(ti.concept_list.size()>1)
-        genChoisePage(ti);
+    qDebug()<<"Term #"<<ti.id;
+    QTextDocument * document=ui->rtfView->document();
+    document->clear();
+    QTextCursor cursor=ui->rtfView->textCursor();
+    QStringList html;
+    html<<"<h1>"<<ti.title<<"</h1><hr/><br>";
+    //cursor.movePosition(QTextCursor::Start);
+    cursor.insertHtml(html.join(""));
+
+    m_request->startTransaction();
+    m_request->getConcept(ti.concept_list.first());
+    m_request->getConceptText(ti.concept_list.first());
+    QByteArray bytes=m_request->endTransaction().buffer();
+    QDataStream stream(&bytes,QIODevice::ReadOnly);
+    QString text;
+    ConceptInfo ci;
+    stream>>ci;
+    stream>>text;
+    //ui->rtfView->setText(text);
+    cursor.insertHtml(text);
+    cursor.insertHtml("<br><hr><br><i>Последнее изменение: "+ci.last_modified.toString(DATE_TIME_FORMAT)+"</i>");
 }
 
 void MainWindow::genChoisePage(TermInfo &ti)
@@ -133,6 +171,25 @@ void MainWindow::genChoisePage(TermInfo &ti)
     cursor.insertHtml(html.join(""));
     cursor.insertImage(QImage(":/icons/multiple-values.png"));
     cursor.insertHtml("<p><i>Этот термин имеет несколько значений.</i></p><br>");
+    m_request->startTransaction();
+    html.clear();
+    html<<"<ul>";
+    qDebug()<<ti.concept_list;
+    foreach (quint32 ci, ti.concept_list) {
+        m_request->getConcept(ci);
+    }
+    QByteArray bytes=m_request->endTransaction().buffer();
+    QDataStream stream(&bytes,QIODevice::ReadOnly);
+    while(!stream.atEnd())
+    {
+        ConceptInfo ci;
+        stream>>ci;
+        html<<"<li><a href='#term:"<<QString::number(ci.term_list.first())
+           <<":"<<QString::number(ci.id)<<"'>"<<ti.title<<" ("<<m_domains_info[ci.domain_id].title.toLower()
+            <<")</a></li>";
+    }
+    html<<"</ul>";
+    cursor.insertHtml(html.join(""));
     /*cursor.insertHtml("<ol>");
     QTextCursor * cur=new QTextCursor(cursor);
     cursor.insertHtml("</ol>");
@@ -149,6 +206,27 @@ void MainWindow::genChoisePage(TermInfo &ti)
 void MainWindow::connectSignals()
 {
 
+}
+
+void MainWindow::clearAll()
+{
+    m_domains.clear();
+    m_domains_info.clear();
+    m_search_result.clear();
+    ui->contentsTree->clear();
+    ui->resultsList->clear();
+    ui->rtfView->clear();
+    ui->rtfEdit->clear();
+    ui->txtKeywordSearch->clear();
+    foreach (QAction * act, ui->mainToolBar->actions()) {
+        act->setEnabled(false);
+    }
+
+    disconnect(ui->contentsTree,&QTreeWidget::itemCollapsed,0,0);
+    disconnect(ui->contentsTree,&QTreeWidget::itemExpanded,0,0);
+    disconnect(m_request,&RequestBuilder::loadDomains,0,0);
+    disconnect(m_request,&RequestBuilder::loadTermsByDomain,0,0);
+    disconnect(ui->contentsTree,&QTreeWidget::itemSelectionChanged,0,0);
 }
 
 MainWindow::~MainWindow()
@@ -199,4 +277,104 @@ void MainWindow::initUI()
 
     //edit panel
     ui->editPage->setLayout(ui->editLayout);
+}
+
+void MainWindow::on_termsList_entered(const QModelIndex &index)
+{
+
+}
+
+void MainWindow::on_termsList_pressed(const QModelIndex &index)
+{
+
+}
+
+void MainWindow::on_termsList_activated(const QModelIndex &index)
+{
+    // bug with transactions
+    TermInfo ti=*(TermInfo *)index.internalPointer();
+    showTerm(ti);
+}
+
+void MainWindow::on_txtKeywordSearch_returnPressed()
+{
+    ui->resultsList->clear();
+    m_search_result.clear();
+    QString search=ui->txtKeywordSearch->text().toLower();
+    m_request->startTransaction();
+    m_request->search(search);
+    QByteArray array=m_request->endTransaction().buffer();
+    QDataStream stream(&array,QIODevice::ReadOnly);
+    QList<quint32> term_ids;
+    stream>>term_ids;
+    if(term_ids.size()==0)
+    {
+        QMessageBox::information(this,"Поиск","Поиск не дал результатов.");
+        return;
+    }
+    m_request->startTransaction();
+    foreach (quint32 term_id, term_ids) {
+        m_request->getTerm(term_id);
+    }
+    QByteArray terms_data=m_request->endTransaction().buffer();
+    QDataStream terms_stream(&terms_data,QIODevice::ReadOnly);
+    TermInfo ti;
+    TermInfo * term_ptr=0;
+    while(!terms_stream.atEnd())
+    {
+        terms_stream>>ti;
+        m_search_result[ti.id]=ti;
+        term_ptr=&m_search_result[ti.id];
+        QListWidgetItem * item=new QListWidgetItem(ti.title);
+        item->setData(Qt::UserRole,QVariant((qint64)term_ptr));
+        ui->resultsList->addItem(item);
+    }
+}
+
+void MainWindow::on_resultsList_activated(const QModelIndex &index)
+{
+    if(index.isValid())
+    {
+        QListWidgetItem * item=(QListWidgetItem *)index.internalPointer();
+        TermInfo * ti=(TermInfo *)item->data(Qt::UserRole).toLongLong();
+        showTerm(*ti);
+    }
+}
+
+void MainWindow::on_actionBack_triggered()
+{
+
+}
+
+void MainWindow::on_actionNext_triggered()
+{
+
+}
+
+void MainWindow::on_actionRequest_triggered()
+{
+
+}
+
+void MainWindow::on_actionAddTerm_triggered()
+{
+
+}
+
+void MainWindow::on_actionEdit_triggered()
+{
+
+}
+
+void MainWindow::on_actionLogout_triggered()
+{
+    clearAll();
+    m_request->disconnectFromHost();
+    login(m_request,this);
+}
+
+void MainWindow::on_actionRefresh_triggered()
+{
+    clearAll();
+    loadData();
 }

@@ -65,11 +65,19 @@ void ServiceProvider::getAllTerms(PacketHeader header,QBufferPtr data)
     }
     QByteArray result;
     QDataStream output(&result,QIODevice::WriteOnly);
+
+    QDataStream input(data);
+    Q_ASSERT(data->isOpen());
+
+    quint32 start=0,length=0;
+    input>>start>>length;
     auto termsById=m_provider->rdLockTermsById();
-    foreach (TermInfo * ti, termsById->values()) {
-        output<<*ti;
+    QList<TermInfo> list;
+    foreach (TermInfo * ti, termsById->values().mid(start,length)) {
+        list<<*ti;
     }
     m_provider->unlock();
+    output<<list;
     header.status=CMD_OK;
     invokeCallBack(header,result);
 }
@@ -145,6 +153,7 @@ void ServiceProvider::getConcept(PacketHeader header, QBufferPtr data)
     Q_ASSERT(data->isOpen());
     quint32 conceptId=0;
     input>>conceptId;
+    qDebug()<<"Get Concept #"<<conceptId;
     auto conceptsById=m_provider->rdLockConceptById();
     const ConceptInfo * ci=conceptsById->value(conceptId);
     if(!ci)

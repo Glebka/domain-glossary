@@ -64,7 +64,10 @@ qint64 ClientWorker::readData()
         qDebug()<<m_readed<<" bytes readed in "<<m_portions<<" portions";
         dataArrived();
         if(m_socket->bytesAvailable())
+        {
+            qDebug()<<"More data available... Read it.";
             onReadyRead();
+        }
     }
     return bytes.size();
 }
@@ -126,6 +129,8 @@ void ClientWorker::onReadyRead()
         m_packet_started=true;
         m_portions=0;
         m_readed=0;
+        m_raw_buffer.seek(0);
+        m_raw_buffer.buffer().clear();
         if(!m_timer.isActive())
         {
             m_timer.setSingleShot(true);

@@ -13,21 +13,6 @@ ClientSideProxy::ClientSideProxy() :
     qRegisterMetaType<PacketHeader>("PacketHeader");
     qRegisterMetaType<QBufferPtr>("QBufferPtr");
 
-    m_methods[CMD_GET_ALL_DOMAINS]="on_getAllDomains";
-    m_methods[CMD_GET_ALL_TERMS]="on_getAllTerms";
-    m_methods[CMD_GET_CONCEPT]="on_getConcept";
-    m_methods[CMD_GET_CONCEPT_TEXT]="on_getConceptText";
-    m_methods[CMD_GET_DOMAIN]="on_getDomainById";
-    m_methods[CMD_GET_TERM]="on_getTerm";
-    m_methods[CMD_GET_TERMS_BY_DOMAIN]="on_getTermsByDomain";
-    m_methods[CMD_GET_USER]="on_getUserById";
-    m_methods[CMD_SEARCH]="on_search";
-    m_methods[CMD_LOGIN]="on_login";
-    m_methods[CMD_ERROR]="on_error";
-    m_methods[CMD_FORBIDDEN]="on_forbidden";
-    m_methods[CMD_NOT_FOUND]="on_notFound";
-    m_methods[CMD_TIMEOUT]="on_timeout";
-
     connect(&m_timer,&QTimer::timeout,this,&ClientSideProxy::timeout);
 
 }
@@ -72,11 +57,12 @@ void ClientSideProxy::dataArrived()
     }
     m_timer.stop();
     m_queue.dequeue();
-    if(m_methods.contains(m_header.command))
+    QMetaObject::invokeMethod(m_request_builder,CALLBACK,Qt::BlockingQueuedConnection,Q_ARG(PacketHeader,m_header),Q_ARG(QBufferPtr,&m_raw_buffer));
+    /*if(m_methods.contains(m_header.command))
     {
         QString method=m_methods[m_header.command];
-        log("QMetaObject::invokeMethod "+method);
-        QMetaObject::invokeMethod(m_request_builder,method.toStdString().c_str(),Qt::BlockingQueuedConnection,Q_ARG(PacketHeader,m_header),Q_ARG(QBufferPtr,&m_raw_buffer));
+        log("QMetaObject::invokeMethod "CALLBACK);
+        QMetaObject::invokeMethod(m_request_builder,CALLBACK,Qt::BlockingQueuedConnection,Q_ARG(PacketHeader,m_header),Q_ARG(QBufferPtr,&m_raw_buffer));
     }
     else
     {
@@ -87,7 +73,7 @@ void ClientSideProxy::dataArrived()
         m_raw_buffer.seek(0);
         m_raw_buffer.buffer().clear();
         QMetaObject::invokeMethod(m_request_builder,m_methods[CMD_ERROR].toStdString().c_str(),Qt::BlockingQueuedConnection,Q_ARG(PacketHeader,m_header),Q_ARG(QBufferPtr,&m_raw_buffer));
-    }
+    }*/
 }
 
 void ClientSideProxy::onReadyRead()
@@ -165,9 +151,9 @@ void ClientSideProxy::connectToHost()
     m_socket->connectToHost(m_host_port.at(0),m_host_port.at(1).toInt());
     if(!m_socket->waitForConnected())
         return;
-    m_socket->setReadBufferSize(SOCKET_BUFFER_SIZE);
+    //m_socket->setReadBufferSize(SOCKET_BUFFER_SIZE);
     m_socket_data_stream.setDevice(m_socket);
-    Q_ASSERT(m_raw_buffer.open(QIODevice::ReadWrite));
+    m_raw_buffer.open(QIODevice::ReadWrite);
 }
 
 QAbstractSocket::SocketState ClientSideProxy::state()
@@ -197,13 +183,13 @@ void ClientSideProxy::run()
 void ClientSideProxy::sendData(quint32 command, QByteArray data)
 {
     log("sendData()");
-    //PacketHeader header;
-    m_header.command=command;
-    m_header.data_length=data.size();
-    m_header.start_flag=PACKET_START;
-    m_header.status=CMD_OK;
-    m_header.uid=QDateTime::currentMSecsSinceEpoch();
-    m_socket_data_stream<<m_header;
+    PacketHeader header;
+    header.command=command;
+    header.data_length=data.size();
+    header.start_flag=PACKET_START;
+    header.status=CMD_OK;
+    header.uid=QDateTime::currentMSecsSinceEpoch();
+    m_socket_data_stream<<header;
     m_socket->waitForBytesWritten();
     QBuffer buffer(&data);
     Q_ASSERT(buffer.open(QIODevice::ReadOnly));
@@ -217,7 +203,7 @@ void ClientSideProxy::sendData(quint32 command, QByteArray data)
     }
     buffer.close();
     qDebug()<<written<<" bytes written in "<<portions<<" portions of "<<data.size();
-    m_queue.enqueue(m_header);
+    m_queue.enqueue(header);
     if(!m_timer.isActive())
     {
         m_timer.setSingleShot(true);
@@ -227,13 +213,15 @@ void ClientSideProxy::sendData(quint32 command, QByteArray data)
 
 void ClientSideProxy::onDisconnected()
 {
-    m_instance=0;
-    emit terminate();
+    //m_instance=0;
+    //emit terminate();
 }
 
 void ClientSideProxy::disconnectFromServer()
 {
     m_socket->disconnectFromHost();
+    m_raw_buffer.buffer().clear();
+    m_raw_buffer.close();
 }
 
 void ClientSideProxy::timeout()
@@ -245,11 +233,12 @@ void ClientSideProxy::timeout()
     PacketHeader header=m_queue.dequeue();
     header.data_length=0;
     header.status=CMD_TIMEOUT;
-    if(m_methods.contains(header.command))
+    QMetaObject::invokeMethod(m_request_builder,CALLBACK,Qt::BlockingQueuedConnection,Q_ARG(PacketHeader,header),Q_ARG(QBufferPtr,&m_raw_buffer));
+    /*if(m_methods.contains(header.command))
     {
         QString method=m_methods[m_header.command];
         log("Timeout invokeMethod "+method);
         QMetaObject::invokeMethod(m_request_builder,method.toStdString().c_str(),Qt::BlockingQueuedConnection,Q_ARG(PacketHeader,header),Q_ARG(QBufferPtr,&m_raw_buffer));
-    }
+    }*/
     log("Timeout");
 }

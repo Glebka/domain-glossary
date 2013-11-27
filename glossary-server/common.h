@@ -11,7 +11,7 @@
 #define CONFIG_FILE     "config.xml"
 #define CONTENTS_FILE   "contents.xml"
 #define DATA_DIRECTORY  "./data"
-#define EXTENSION       ".rtf"
+#define EXTENSION       ".html"
 
 
 // Config file tags definition

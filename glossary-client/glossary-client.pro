@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     addlinkdialog.cpp \
     common.cpp \
     requestbuilder.cpp \
-    clientsideproxy.cpp
+    clientsideproxy.cpp \
+    termindexmodel.cpp
 
 HEADERS  += mainwindow.h \
     textedit.h \
@@ -31,7 +32,9 @@ HEADERS  += mainwindow.h \
     addlinkdialog.h \
     common.h \
     requestbuilder.h \
-    clientsideproxy.h
+    clientsideproxy.h \
+    termindexmodel.h \
+    main.h
 
 FORMS    += mainwindow.ui \
     logindialog.ui \

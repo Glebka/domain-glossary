@@ -17,9 +17,9 @@
    <widget class="QSplitter" name="splitter">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>601</width>
+      <x>10</x>
+      <y>20</y>
+      <width>511</width>
       <height>291</height>
      </rect>
     </property>
@@ -78,10 +78,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="txtIndexSearch"/>
-        </item>
-        <item>
-         <widget class="QListWidget" name="termsList"/>
+         <widget class="QListView" name="termsList"/>
         </item>
        </layout>
       </widget>
@@ -111,7 +108,17 @@
          <widget class="QLineEdit" name="txtKeywordSearch"/>
         </item>
         <item>
-         <widget class="QListWidget" name="resultsList"/>
+         <widget class="QListWidget" name="resultsList">
+          <property name="editTriggers">
+           <set>QAbstractItemView::CurrentChanged|QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -199,6 +206,7 @@
    </attribute>
    <addaction name="actionBack"/>
    <addaction name="actionNext"/>
+   <addaction name="actionRefresh"/>
    <addaction name="separator"/>
    <addaction name="actionAddTerm"/>
    <addaction name="actionEdit"/>
@@ -277,6 +285,18 @@
    </property>
    <property name="toolTip">
     <string>Выйти</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/refresh.png</normaloff>:/icons/refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>Обновить</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
  </widget>

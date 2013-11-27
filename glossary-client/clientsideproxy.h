@@ -20,6 +20,9 @@
 
 
 #define CONFIG_FILE "connect.conf"
+#define CALLBACK "on_responseReady"
+
+//CLARKSON, Kelly and Egor Golovin - Because Of You (ChillOut Remix)
 
 class RequestBuilder;
 
@@ -55,8 +58,7 @@ private:
     QDataStream m_socket_data_stream;
     QBuffer m_raw_buffer;
     PacketHeader m_header;
-    bool m_packet_started;
-    QMap<quint32,QString> m_methods;
+    bool m_packet_started;    
     QQueue<PacketHeader> m_queue;
     QTimer m_timer;
     RequestBuilder * m_request_builder;

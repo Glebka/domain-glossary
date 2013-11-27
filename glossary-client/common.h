@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <QApplication>
+#include <QDialog>
 #include <QString>
 #include <QList>
 #include <QDateTime>
@@ -166,5 +168,6 @@ QDataStream & operator >>(QDataStream &out, DomainInfo & di);
 QDataStream & operator >>(QDataStream &out, UserInfo & ui);
 QDataStream & operator >>(QDataStream &out, TermDefinition & td);
 QDataStream & operator >>(QDataStream &out, PacketHeader & ph);
+
 
 #endif

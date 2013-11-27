@@ -426,10 +426,10 @@ QString DataProvider::getConceptFileContents(quint32 conceptId)
     quint8 * id_path=(quint8 *)&conceptId;
     QStringList pathList;
     pathList<<DATA_DIRECTORY
-            <<QString::number(id_path[0],16)
-            <<QString::number(id_path[1],16)
+            <<QString::number(id_path[3],16)
             <<QString::number(id_path[2],16)
-            <<QString::number(id_path[3],16);
+            <<QString::number(id_path[1],16)
+            <<QString::number(id_path[0],16);
     QString path=pathList.join("/");
     path.append(EXTENSION);
     log("Will open concept file: "+path);
