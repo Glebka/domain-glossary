@@ -153,6 +153,9 @@ const quint32 CMD_SEARCH=0x308;
 const quint32 CMD_GET_DOMAIN=0x309;
 const quint32 CMD_GET_USER=0x30A;
 
+const quint32 CMD_ADD_TERM=0x30B;
+const quint32 CMD_ADD_TERM_TO_EXISTING=0x30C;
+
 QDataStream & operator <<(QDataStream &out, const TermInfo & ti);
 QDataStream & operator <<(QDataStream &out, const ConceptInfo & ci);
 QDataStream & operator <<(QDataStream &out, const DomainInfo & di);

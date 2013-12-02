@@ -66,8 +66,8 @@ public:
     const QMap<quint32,ConceptInfo *> * rdLockConceptById();
     QMap<quint32,ConceptInfo *> * wrLockConceptById();
 
-    const QMultiHash<QString,TermInfo *> * rdLockTermsByName();
-    QMultiHash<QString,TermInfo *> * wrLockTermsByName();
+    const QMultiMap<QString,TermInfo *> * rdLockTermsByName();
+    QMultiMap<QString,TermInfo *> * wrLockTermsByName();
 
     const QMultiHash<QString,ConceptInfo *> * rdLockConceptsByKeyword();
     QMultiHash<QString,ConceptInfo *> * wrLockConceptsByKeyword();
@@ -103,7 +103,7 @@ private:
     QMap<quint32,TermInfo *> * m_term_by_id;
     QMultiMap<quint32,TermInfo *> * m_term_by_domain_id;
     QMap<quint32,ConceptInfo *> * m_concept_by_id;
-    QMultiHash<QString,TermInfo *> * m_terms_by_name;
+    QMultiMap<QString,TermInfo *> * m_terms_by_name;
     QMultiHash<QString,ConceptInfo *> * m_concepts_by_keyword;
 
     UserInfo * m_users;

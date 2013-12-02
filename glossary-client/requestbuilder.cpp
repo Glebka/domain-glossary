@@ -14,6 +14,10 @@ RequestBuilder::RequestBuilder(QObject *parent) :
     m_methods[CMD_GET_TERMS_BY_DOMAIN]="on_getTermsByDomain";
     m_methods[CMD_GET_USER]="on_getUserById";
     m_methods[CMD_SEARCH]="on_search";
+
+    m_methods[CMD_ADD_TERM]="on_addTerm";
+    m_methods[CMD_ADD_TERM_TO_EXISTING]="on_addTerm";
+
     m_methods[CMD_LOGIN]="on_login";
     m_methods[CMD_ERROR]="on_error";
     m_methods[CMD_FORBIDDEN]="on_forbidden";
@@ -157,11 +161,45 @@ void RequestBuilder::search(QString search)
     QMetaObject::invokeMethod(m_proxy,"sendData",Qt::QueuedConnection,Q_ARG(quint32,CMD_SEARCH),Q_ARG(QByteArray,buffer.buffer()));
 }
 
+void RequestBuilder::addTerm(QString term)
+{
+    if(user.type!=Expert)
+    {
+        QMessageBox::warning(0,"Добавление термина","Операция не разрешена. Войдите в систему, используя учетную запись эксперта.");
+        return;
+    }
+    if(m_is_transaction)
+        m_queue.enqueue(CMD_ADD_TERM);
+    QBuffer buffer;
+    if(!buffer.open(QIODevice::WriteOnly))
+        return;
+    QDataStream stream(&buffer);
+    stream<<term;
+    QMetaObject::invokeMethod(m_proxy,"sendData",Qt::QueuedConnection,Q_ARG(quint32,CMD_ADD_TERM),Q_ARG(QByteArray,buffer.buffer()));
+}
+
+void RequestBuilder::addTermToExisting(QString term, quint32 anotherTermId)
+{
+    if(user.type!=Expert)
+    {
+        QMessageBox::warning(0,"Добавление термина","Операция не разрешена. Войдите в систему, используя учетную запись эксперта.");
+        return;
+    }
+    if(m_is_transaction)
+        m_queue.enqueue(CMD_ADD_TERM_TO_EXISTING);
+    QBuffer buffer;
+    if(!buffer.open(QIODevice::WriteOnly))
+        return;
+    QDataStream stream(&buffer);
+    stream<<term<<anotherTermId;
+    QMetaObject::invokeMethod(m_proxy,"sendData",Qt::QueuedConnection,Q_ARG(quint32,CMD_ADD_TERM_TO_EXISTING),Q_ARG(QByteArray,buffer.buffer()));
+}
+
 void RequestBuilder::on_responseReady(PacketHeader header, QBufferPtr data)
 {
     if(m_is_transaction)
     {
-        if(header.command!=m_queue.head()||(header.status!=CMD_OK && header.status!=CMD_FORBIDDEN))
+        if(header.command!=m_queue.head()||(header.status!=CMD_OK && header.status!=CMD_OK_NOCACHE))
         {
             terminateTransaction();
             return;
@@ -272,6 +310,16 @@ void RequestBuilder::on_search(PacketHeader header, QByteArray data)
     QList<quint32> list;
     stream>>list;
     emit loadSearch(list);
+}
+
+void RequestBuilder::on_addTerm(PacketHeader header, QByteArray data)
+{
+    if(header.status!=CMD_OK_NOCACHE)
+        qDebug()<<"Error on AddTerm";
+    QDataStream stream(&data,QIODevice::ReadOnly);
+    TermInfo ti;
+    stream>>ti;
+    emit termAdded(ti);
 }
 
 void RequestBuilder::on_login(PacketHeader header, QByteArray data)

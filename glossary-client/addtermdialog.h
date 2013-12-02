@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <requestbuilder.h>
 #include <termindexmodel.h>
+#include <QMessageBox>
 
 namespace Ui {
 class AddTermDialog;
@@ -22,6 +23,10 @@ private:
     QAbstractItemModel * m_model;
     QMap<quint32, DomainInfo> *m_domains;
     Ui::AddTermDialog *ui;
+
+    // QDialog interface
+public slots:
+    void accept();
 };
 
 #endif // ADDTERMDIALOG_H

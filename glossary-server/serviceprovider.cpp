@@ -71,9 +71,9 @@ void ServiceProvider::getAllTerms(PacketHeader header,QBufferPtr data)
 
     quint32 start=0,length=0;
     input>>start>>length;
-    auto termsById=m_provider->rdLockTermsById();
+    auto termsByName=m_provider->rdLockTermsByName();
     QList<TermInfo> list;
-    foreach (TermInfo * ti, termsById->values().mid(start,length)) {
+    foreach (TermInfo * ti, termsByName->values().mid(start,length)) {
         list<<*ti;
     }
     m_provider->unlock();
@@ -214,7 +214,7 @@ void ServiceProvider::search(PacketHeader header, QBufferPtr data)
     Q_ASSERT(data->isOpen());
     QString search;
     input>>search;
-    const QMultiHash<QString, TermInfo *> * termsByName=m_provider->rdLockTermsByName();
+    const QMultiMap<QString, TermInfo *> * termsByName=m_provider->rdLockTermsByName();
     QSet<quint32> searchResult;
     foreach (TermInfo * ti, termsByName->values(search)) {
         searchResult<<ti->id;
@@ -227,6 +227,76 @@ void ServiceProvider::search(PacketHeader header, QBufferPtr data)
     m_provider->unlock();
     output<<searchResult;
     header.status=CMD_OK;
+    invokeCallBack(header,result);
+}
+
+void ServiceProvider::addTerm(PacketHeader header, QBufferPtr data)
+{
+    if(!m_user || m_user->type!=Expert || m_user->domain_id==0)
+    {
+        header.status=CMD_FORBIDDEN;
+        invokeCallBack(header);
+        return;
+    }
+    QByteArray result;
+    QDataStream input(data);
+    QDataStream output(&result,QIODevice::WriteOnly);
+    Q_ASSERT(data->isOpen());
+    QString term;
+    input>>term;
+    ConceptInfo * ci=new ConceptInfo;
+    TermInfo * ti=new TermInfo;
+    ti->domain_id=m_user->domain_id;
+    ti->title=term;
+    ci->domain_id=m_user->domain_id;
+    ci->last_modified=QDateTime::currentDateTime();
+    QMap<quint32,TermInfo *> * termById=m_provider->wrLockTermsById();
+    QMultiMap<QString,TermInfo *> * termsByName=m_provider->wrLockTermsByName();
+    QMultiMap<quint32,TermInfo *> * termsByDomainId=m_provider->wrLockTermsByDomainId();
+    QMap<quint32,ConceptInfo *> *conceptById=m_provider->wrLockConceptById();
+    ti->id=termById->keys().last()+1;
+    ci->id=conceptById->keys().last()+1;
+    ti->concept_list.append(ci->id);
+    ci->term_list.append(ti->id);
+    termById->insert(ti->id,ti);
+    termsByDomainId->insert(ti->domain_id,ti);
+    termsByName->insert(ti->title,ti);
+    conceptById->insert(ci->id,ci);
+    output<<*ti;
+    m_provider->unlock();
+    header.status=CMD_OK_NOCACHE;
+    invokeCallBack(header,result);
+}
+
+void ServiceProvider::addTermToExisting(PacketHeader header, QBufferPtr data)
+{
+    if(!m_user || m_user->type!=Expert || m_user->domain_id==0)
+    {
+        header.status=CMD_FORBIDDEN;
+        invokeCallBack(header);
+        return;
+    }
+    QByteArray result;
+    QDataStream input(data);
+    QDataStream output(&result,QIODevice::WriteOnly);
+    Q_ASSERT(data->isOpen());
+    QString term;
+    quint32 anotherTermId;
+    input>>term>>anotherTermId;
+    TermInfo * ti=new TermInfo;
+    ti->domain_id=m_user->domain_id;
+    ti->title=term;
+    QMap<quint32,TermInfo *> * termById=m_provider->wrLockTermsById();
+    QMultiMap<QString,TermInfo *> * termsByName=m_provider->wrLockTermsByName();
+    QMultiMap<quint32,TermInfo *> * termsByDomainId=m_provider->wrLockTermsByDomainId();
+    ti->id=termById->keys().last()+1;
+    ti->concept_list.append(termById->value(anotherTermId)->concept_list);
+    termById->insert(ti->id,ti);
+    termsByDomainId->insert(ti->domain_id,ti);
+    termsByName->insert(ti->title,ti);
+    output<<*ti;
+    m_provider->unlock();
+    header.status=CMD_OK_NOCACHE;
     invokeCallBack(header,result);
 }
 

@@ -10,6 +10,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QWaitCondition>
+#include <QMessageBox>
 
 #include <common.h>
 #include <clientsideproxy.h>
@@ -37,6 +38,7 @@ signals:
     void loadConceptText(QString text);
     void loadSearch(QList<quint32> results);
     void loadTerm(TermInfo term);
+    void termAdded(TermInfo term);
 
 public slots:
 
@@ -51,6 +53,9 @@ public slots:
     void getTerm(quint32 termId);
     void search(QString search);
 
+    void addTerm(QString term);
+    void addTermToExisting(QString term, quint32 anotherTermId);
+
     void on_responseReady(PacketHeader header, QBufferPtr data);
 
     void on_getAllDomains(PacketHeader header, QByteArray data);
@@ -62,6 +67,9 @@ public slots:
     void on_getTermsByDomain(PacketHeader header, QByteArray data);
     void on_getUserById(PacketHeader header, QByteArray data);
     void on_search(PacketHeader header, QByteArray data);
+
+    void on_addTerm(PacketHeader header, QByteArray data);
+
     void on_login(PacketHeader header, QByteArray data);
     void on_error(PacketHeader header, QByteArray data);
     void on_forbidden(PacketHeader header, QByteArray data);

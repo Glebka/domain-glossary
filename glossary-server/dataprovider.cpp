@@ -397,13 +397,13 @@ QMap<quint32, ConceptInfo *> *DataProvider::wrLockConceptById()
     return m_concept_by_id;
 }
 
-const QMultiHash<QString, TermInfo *> *DataProvider::rdLockTermsByName()
+const QMultiMap<QString, TermInfo *> *DataProvider::rdLockTermsByName()
 {
     m_lockers[TermByName].lockForRead();
     return m_terms_by_name;
 }
 
-QMultiHash<QString, TermInfo *> *DataProvider::wrLockTermsByName()
+QMultiMap<QString, TermInfo *> *DataProvider::wrLockTermsByName()
 {
     m_lockers[TermByName].lockForWrite();
     return m_terms_by_name;
@@ -485,14 +485,14 @@ void DataProvider::run()
     m_concepts_by_keyword=new QMultiHash<QString,ConceptInfo *>();
     m_concept_by_id=new QMap<quint32,ConceptInfo *>();
     m_domains_by_id=new QMap<quint32,DomainInfo *>();
-    m_terms_by_name=new QMultiHash<QString,TermInfo *>();
+    m_terms_by_name=new QMultiMap<QString,TermInfo *>();
     m_term_by_id=new QMap<quint32,TermInfo *>();
     m_users_by_domain=new QMultiMap<quint32,UserInfo *>();
     m_users_by_id=new QMap<quint32,UserInfo *>();
     m_users_by_login=new QMap<QString,UserInfo *>();
     m_term_by_domain_id=new QMultiMap<quint32,TermInfo *>();
-    //if(initFromBinary())
-    if(initFromXml())
+    if(initFromBinary())
+    //if(initFromXml())
         emit ready();
 }
 

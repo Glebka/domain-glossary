@@ -45,6 +45,10 @@ public slots:
     void getConcept(PacketHeader header, QBufferPtr data);
     void getConceptText(PacketHeader header,QBufferPtr data);
     void search(PacketHeader header,QBufferPtr data);
+
+    void addTerm(PacketHeader header,QBufferPtr data);
+    void addTermToExisting(PacketHeader header,QBufferPtr data);
+
     void getDomainById(PacketHeader header,QBufferPtr data);
     void getUserById(PacketHeader header,QBufferPtr data);
 

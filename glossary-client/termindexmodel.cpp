@@ -54,12 +54,13 @@ QVariant TermIndexModel::data(const QModelIndex &index, int role) const
     TermInfo *item = static_cast<TermInfo*>(index.internalPointer());
     switch (role) {
     case Qt::ToolTipRole:
+    case Qt::DisplayRole:
         if(m_domains->contains(item->domain_id))
             return item->title+" ("+m_domains->value(item->domain_id).title.toLower()+")";
         else
             return item->title;
-    case Qt::DisplayRole:
-        return item->title;
+    case Qt::UserRole:
+        return item->id;
     default:
         return QVariant();
     }

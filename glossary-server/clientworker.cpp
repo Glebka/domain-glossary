@@ -19,6 +19,10 @@ ClientWorker::ClientWorker(qintptr socketHandle,ServiceProvider * service, QObje
     m_methods[CMD_GET_TERMS_BY_DOMAIN]="getTermsByDomain";
     m_methods[CMD_GET_USER]="getUserById";
     m_methods[CMD_SEARCH]="search";
+
+    m_methods[CMD_ADD_TERM]="addTerm";
+    m_methods[CMD_ADD_TERM_TO_EXISTING]="addTermToExisting";
+
     m_methods[CMD_LOGIN]="login";
     connect(&m_timer,&QTimer::timeout,this,&ClientWorker::timeout);
 }
