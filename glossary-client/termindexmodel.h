@@ -32,7 +32,7 @@ private:
     mutable bool is_requested;
     mutable bool can_fetch;
     void request() const;
-    QMap<quint32,DomainInfo> * m_domains;
+    QMap<quint32,DomainInfo> m_domains;
 
     // QAbstractItemModel interface
 

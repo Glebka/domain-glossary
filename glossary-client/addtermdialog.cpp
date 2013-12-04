@@ -9,9 +9,16 @@ AddTermDialog::AddTermDialog(RequestBuilder *builder, QAbstractItemModel *model,
   ,m_domains(domains)
 {
     ui->setupUi(this);
-    ui->comboBox->setModel(model);
-    ui->txtDomain->setText(m_domains->value(builder->user.domain_id).title);
+    qDebug()<<m_request->user.domain_id;
+    m_request->startTransaction();
+    m_request->getDomainById(m_request->user.domain_id);
+    QByteArray array=m_request->endTransaction();
+    QDataStream stream(&array,QIODevice::ReadOnly);
+    DomainInfo di;
+    stream>>di;
+    ui->txtDomain->setText(di.title);
     setWindowTitle("Добавить термин");
+    ui->comboBox->setModel(model);
 }
 
 AddTermDialog::~AddTermDialog()
@@ -19,6 +26,15 @@ AddTermDialog::~AddTermDialog()
     delete ui;
 }
 
+TermInfo AddTermDialog::dialogResult()
+{
+    return m_term;
+}
+
+bool AddTermDialog::isAutoStartEdit()
+{
+    return ui->radioNewDefinition->isChecked();
+}
 
 void AddTermDialog::accept()
 {
@@ -37,13 +53,11 @@ void AddTermDialog::accept()
         m_request->addTermToExisting(ui->txtTerm->text(),ui->comboBox->itemData(ui->comboBox->currentIndex(),Qt::UserRole).toUInt());
     else
         m_request->addTerm(ui->txtTerm->text());
-    QByteArray bytes=m_request->endTransaction().buffer();
+    QByteArray bytes=m_request->endTransaction();
     QDataStream stream(&bytes,QIODevice::ReadOnly);
     if(bytes.size()>0)
     {
-        TermInfo ti;
-        stream>>ti;
-        qDebug()<<ti.title;
+        stream>>m_term;
         QDialog::accept();
     }
     else

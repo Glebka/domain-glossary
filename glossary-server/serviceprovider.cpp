@@ -73,8 +73,13 @@ void ServiceProvider::getAllTerms(PacketHeader header,QBufferPtr data)
     input>>start>>length;
     auto termsByName=m_provider->rdLockTermsByName();
     QList<TermInfo> list;
-    foreach (TermInfo * ti, termsByName->values().mid(start,length)) {
-        list<<*ti;
+    int fetched=0;
+    foreach (QString key, termsByName->keys().mid(start,length)) {
+        foreach (TermInfo * ti, termsByName->values(key)) {
+            if(fetched==length) break;
+            list<<*ti;
+            fetched++;
+        }
     }
     m_provider->unlock();
     output<<list;
@@ -221,7 +226,7 @@ void ServiceProvider::search(PacketHeader header, QBufferPtr data)
     }
     m_provider->unlock();
     const QMultiHash<QString, ConceptInfo *> * conceptsByKeyword=m_provider->rdLockConceptsByKeyword();
-    foreach (ConceptInfo * ci, conceptsByKeyword->values(search)) {
+    foreach (ConceptInfo * ci, conceptsByKeyword->values(search.toLower())) {
         searchResult+=ci->term_list.toSet();
     }
     m_provider->unlock();

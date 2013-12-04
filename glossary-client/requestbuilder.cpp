@@ -48,11 +48,17 @@ void RequestBuilder::disconnectFromHost()
 {
     user=UserInfo();
     m_queue.clear();
+    m_transaction.buffer().clear();
+    m_is_transaction=false;
+    m_transactionClosed.wakeAll();
     m_proxy->disconnectFromServer();
 }
 
 void RequestBuilder::startTransaction()
 {
+    //QMutexLocker locker(&m_start_mutex);
+    //if(m_is_transaction||!m_queue.isEmpty())
+    //    m_activeTransaction.wait(&m_start_mutex);
     m_is_transaction=true;
     m_queue.clear();
     m_transaction.seek(0);
@@ -60,17 +66,21 @@ void RequestBuilder::startTransaction()
     log("Transaction started...");
 }
 
-QBuffer &RequestBuilder::endTransaction()
+QByteArray RequestBuilder::endTransaction()
 {
     log("Waiting to close transaction...");
     QMutexLocker locker(&m_mutex);
     m_transactionClosed.wait(&m_mutex);
+    QBuffer buffer;
+    buffer.setData(m_transaction.buffer());
     log("Transaction closed");
-    return m_transaction;
+    //m_activeTransaction.wakeAll();
+    return buffer.data();
 }
 
 void RequestBuilder::login(QString user, QString password)
 {
+    log("login");
     if(m_is_transaction)
         m_queue.enqueue(CMD_LOGIN);
     QBuffer buffer;
@@ -84,13 +94,28 @@ void RequestBuilder::login(QString user, QString password)
 
 void RequestBuilder::getAllDomains()
 {
+    log("getAllDomains");
     if(m_is_transaction)
         m_queue.enqueue(CMD_GET_ALL_DOMAINS);
     QMetaObject::invokeMethod(m_proxy,"sendData",Qt::QueuedConnection,Q_ARG(quint32,CMD_GET_ALL_DOMAINS),Q_ARG(QByteArray,QByteArray()));
 }
 
+void RequestBuilder::getDomainById(quint32 domainId)
+{
+    log("getDomainsById");
+    if(m_is_transaction)
+        m_queue.enqueue(CMD_GET_DOMAIN);
+    QBuffer buffer;
+    if(!buffer.open(QIODevice::WriteOnly))
+        return;
+    QDataStream stream(&buffer);
+    stream<<domainId;
+    QMetaObject::invokeMethod(m_proxy,"sendData",Qt::QueuedConnection,Q_ARG(quint32,CMD_GET_DOMAIN),Q_ARG(QByteArray,buffer.buffer()));
+}
+
 void RequestBuilder::getAllTermsByDomain(quint32 domainId)
 {
+    log("getAllTermsByDomain");
     if(m_is_transaction)
         m_queue.enqueue(CMD_GET_TERMS_BY_DOMAIN);
     QBuffer buffer;
@@ -103,6 +128,7 @@ void RequestBuilder::getAllTermsByDomain(quint32 domainId)
 
 void RequestBuilder::getConcept(quint32 conceptId)
 {
+    log("getConcept");
     if(m_is_transaction)
         m_queue.enqueue(CMD_GET_CONCEPT);
     QBuffer buffer;
@@ -115,6 +141,7 @@ void RequestBuilder::getConcept(quint32 conceptId)
 
 void RequestBuilder::getConceptText(quint32 conceptId)
 {
+    log("getConceptText");
     if(m_is_transaction)
         m_queue.enqueue(CMD_GET_CONCEPT_TEXT);
     QBuffer buffer;
@@ -127,6 +154,7 @@ void RequestBuilder::getConceptText(quint32 conceptId)
 
 void RequestBuilder::getAllTerms(quint32 start, quint32 length)
 {
+    log("getAllTerms "+QString::number(start)+","+QString::number(length));
     if(m_is_transaction)
         m_queue.enqueue(CMD_GET_ALL_TERMS);
     QBuffer buffer;
@@ -139,6 +167,7 @@ void RequestBuilder::getAllTerms(quint32 start, quint32 length)
 
 void RequestBuilder::getTerm(quint32 termId)
 {
+    log("getTerm");
     if(m_is_transaction)
         m_queue.enqueue(CMD_GET_TERM);
     QBuffer buffer;
@@ -151,6 +180,7 @@ void RequestBuilder::getTerm(quint32 termId)
 
 void RequestBuilder::search(QString search)
 {
+    log("search");
     if(m_is_transaction)
         m_queue.enqueue(CMD_SEARCH);
     QBuffer buffer;
@@ -163,6 +193,7 @@ void RequestBuilder::search(QString search)
 
 void RequestBuilder::addTerm(QString term)
 {
+    log("addTerm");
     if(user.type!=Expert)
     {
         QMessageBox::warning(0,"Добавление термина","Операция не разрешена. Войдите в систему, используя учетную запись эксперта.");
@@ -180,6 +211,7 @@ void RequestBuilder::addTerm(QString term)
 
 void RequestBuilder::addTermToExisting(QString term, quint32 anotherTermId)
 {
+    log("addTermToExisting");
     if(user.type!=Expert)
     {
         QMessageBox::warning(0,"Добавление термина","Операция не разрешена. Войдите в систему, используя учетную запись эксперта.");
@@ -197,20 +229,47 @@ void RequestBuilder::addTermToExisting(QString term, quint32 anotherTermId)
 
 void RequestBuilder::on_responseReady(PacketHeader header, QBufferPtr data)
 {
-    if(m_is_transaction)
+    log("Queue size:"+QString::number(m_queue.size()));
+    /*if(header.command!=m_queue.head()||(header.status!=CMD_OK && header.status!=CMD_OK_NOCACHE))
     {
-        if(header.command!=m_queue.head()||(header.status!=CMD_OK && header.status!=CMD_OK_NOCACHE))
+        if(m_is_transaction)
         {
             terminateTransaction();
             return;
         }
-        m_queue.dequeue();
+    }
+    m_queue.dequeue();
+    if(m_is_transaction)
+    {
         m_transaction.write(data->buffer());
         if(m_queue.isEmpty())
         {
             m_is_transaction=false;
             m_transaction.seek(0);
             m_transactionClosed.wakeAll();
+        }
+        return;
+    }*/
+    if(m_is_transaction)
+    {
+        qDebug()<<"Ok, this response will be appended to transaction";
+        if(header.command!=m_queue.head()||(header.status!=CMD_OK && header.status!=CMD_OK_NOCACHE))
+        {
+            qDebug()<<"Terminating transaction";
+            terminateTransaction();
+            return;
+        }
+        qDebug()<<"Deque";
+        m_queue.dequeue();
+        qDebug()<<"Queue size "<<m_queue.size();
+        m_transaction.write(data->buffer());
+        if(m_queue.isEmpty())
+        {
+            qDebug()<<"Queue empty, close transaction";
+            m_is_transaction=false;
+            m_transaction.seek(0);
+            m_transactionClosed.wakeAll();
+            m_activeTransaction.wakeAll();
         }
         return;
     }
@@ -230,6 +289,8 @@ void RequestBuilder::on_responseReady(PacketHeader header, QBufferPtr data)
         data->buffer().clear();
         QMetaObject::invokeMethod(this,m_methods[CMD_ERROR].toStdString().c_str(),Qt::QueuedConnection,Q_ARG(PacketHeader,header),Q_ARG(QByteArray,data->buffer()));
     }
+    if(m_queue.isEmpty())
+        m_activeTransaction.wakeAll();
 }
 
 void RequestBuilder::on_getAllDomains(PacketHeader header, QByteArray data)
@@ -274,7 +335,12 @@ void RequestBuilder::on_getConceptText(PacketHeader header, QByteArray data)
 
 void RequestBuilder::on_getDomainById(PacketHeader header, QByteArray data)
 {
-
+    if(header.status!=CMD_OK)
+        qDebug()<<"Error on getDomainById";
+    QDataStream stream(&data,QIODevice::ReadOnly);
+    DomainInfo di;
+    stream>>di;
+    emit loadDomainById(di);
 }
 
 void RequestBuilder::on_getTerm(PacketHeader header, QByteArray data)
@@ -364,7 +430,9 @@ void RequestBuilder::terminateTransaction()
     m_is_transaction=false;
     m_transaction.seek(0);
     m_transaction.buffer().clear();
+    m_queue.clear();
     m_transactionClosed.wakeAll();
+    m_activeTransaction.wakeAll();
 }
 
 void RequestBuilder::log(QString text)

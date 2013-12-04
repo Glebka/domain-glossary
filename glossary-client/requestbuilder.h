@@ -32,6 +32,7 @@ public:
 signals:
     void loggedIn(bool succes);
     void loadDomains(QList<DomainInfo> domains);
+    void loadDomainById(DomainInfo domain);
     void loadTermsByDomain(QList<TermInfo> terms);
     void loadTerms(QList<TermInfo> terms);
     void loadConcept(ConceptInfo ci);
@@ -43,9 +44,10 @@ signals:
 public slots:
 
     void startTransaction();
-    QBuffer & endTransaction();
+    QByteArray endTransaction();
     void login(QString user, QString password);
     void getAllDomains();
+    void getDomainById(quint32 domainId);
     void getAllTermsByDomain(quint32 domainId);
     void getConcept(quint32 conceptId);
     void getConceptText(quint32 conceptId);
@@ -86,8 +88,9 @@ private:
     QQueue<quint32> m_queue;
     bool m_is_transaction;
     QMap<quint32,QString> m_methods;
-    QMutex m_mutex;
+    QMutex m_mutex,m_start_mutex;
     QWaitCondition m_transactionClosed;
+    QWaitCondition m_activeTransaction;
 };
 
 #endif // REQUESTBUILDER_H

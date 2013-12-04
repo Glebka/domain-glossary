@@ -24,5 +24,6 @@
         <file>icons/link.png</file>
         <file>icons/multiple-values.png</file>
         <file>icons/refresh.png</file>
+        <file>empty.html</file>
     </qresource>
 </RCC>

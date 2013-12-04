@@ -34,6 +34,7 @@ public:
     explicit MainWindow(RequestBuilder * builder,QWidget *parent = 0);
     void loadData();
     void showTerm(TermInfo & ti);
+    void startEditTerm(TermInfo ti);
     void genChoisePage(TermInfo & ti);
     ~MainWindow();
 

@@ -8,7 +8,7 @@ LoginDialog::LoginDialog(RequestBuilder *builder, QWidget *parent) :
     , m_result(false)
 {
     ui->setupUi(this);
-    connect(m_request,&RequestBuilder::loggedIn,this,&LoginDialog::onLoggedIn);
+    //connect(m_request,&RequestBuilder::loggedIn,this,&LoginDialog::onLoggedIn);
 }
 
 LoginDialog::~LoginDialog()
@@ -18,17 +18,23 @@ LoginDialog::~LoginDialog()
 
 void LoginDialog::accept()
 {
-    QEventLoop loop;
-    connect(this,&LoginDialog::terminateLoop,&loop,&QEventLoop::quit);
+    //QEventLoop loop;
+    //connect(this,&LoginDialog::terminateLoop,&loop,&QEventLoop::quit);
     if(m_request->state()==QTcpSocket::UnconnectedState)
         if(!m_request->tryConnect())
         {
             QMessageBox::critical(this,"Подлкючение к серверу","Не удалось подключиться к серверу.");
             return;
         }
+    m_request->startTransaction();
     m_request->login(ui->txtLogin->text(),ui->txtPassword->text());
-    loop.exec();
-    if(m_result)
+    QByteArray array=m_request->endTransaction();
+    QDataStream stream(&array,QIODevice::ReadOnly);
+    UserInfo user;
+    stream>>user;
+    m_request->user=user;
+    //loop.exec();
+    if(user.id)
         QDialog::accept();
     else
     {

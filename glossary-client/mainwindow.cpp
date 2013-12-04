@@ -125,6 +125,7 @@ void MainWindow::loadTree()
         stream>>ti;
         showTerm(ti);
     });
+   //ui->contentsTree->topLevelItem(0)->setExpanded(true);
 }
 
 void MainWindow::loadIndex()
@@ -138,6 +139,7 @@ void MainWindow::loadIndex()
 
 void MainWindow::showTerm(TermInfo &ti)
 {
+    ui->stackedWidget->setCurrentIndex(0);
     qDebug()<<"Term #"<<ti.id;
     QTextDocument * document=ui->rtfView->document();
     document->clear();
@@ -150,15 +152,47 @@ void MainWindow::showTerm(TermInfo &ti)
     m_request->startTransaction();
     m_request->getConcept(ti.concept_list.first());
     m_request->getConceptText(ti.concept_list.first());
-    QByteArray bytes=m_request->endTransaction().buffer();
+    QByteArray bytes=m_request->endTransaction();
     QDataStream stream(&bytes,QIODevice::ReadOnly);
     QString text;
     ConceptInfo ci;
     stream>>ci;
     stream>>text;
+    if(text.length()==0)
+    {
+        QFile file(":/empty.html");
+        if(file.open(QIODevice::ReadOnly))
+        {
+            text=file.readAll();
+        }
+    }
     //ui->rtfView->setText(text);
     cursor.insertHtml(text);
     cursor.insertHtml("<br><hr><br><i>Последнее изменение: "+ci.last_modified.toString(DATE_TIME_FORMAT)+"</i>");
+}
+
+void MainWindow::startEditTerm(TermInfo ti)
+{
+    ui->stackedWidget->setCurrentIndex(1);
+    QTextDocument * document=ui->rtfEdit->document();
+    document->clear();
+    QTextCursor cursor=ui->rtfEdit->textCursor();
+    m_request->startTransaction();
+    m_request->getDomainById(ti.domain_id);
+    m_request->getConcept(ti.concept_list.first());
+    m_request->getConceptText(ti.concept_list.first());
+    QByteArray bytes=m_request->endTransaction();
+    QDataStream stream(&bytes,QIODevice::ReadOnly);
+    QString text;
+    ConceptInfo ci;
+    DomainInfo di;
+    stream>>di;
+    stream>>ci;
+    stream>>text;
+    ui->txtDomain->setText(di.title);
+    ui->txtTerm->setText(ti.title);
+    ui->txtKeywords->setText(ci.keywords.join(", "));
+    cursor.insertHtml(text);
 }
 
 void MainWindow::genChoisePage(TermInfo &ti)
@@ -178,7 +212,7 @@ void MainWindow::genChoisePage(TermInfo &ti)
     foreach (quint32 ci, ti.concept_list) {
         m_request->getConcept(ci);
     }
-    QByteArray bytes=m_request->endTransaction().buffer();
+    QByteArray bytes=m_request->endTransaction();
     QDataStream stream(&bytes,QIODevice::ReadOnly);
     while(!stream.atEnd())
     {
@@ -300,10 +334,10 @@ void MainWindow::on_txtKeywordSearch_returnPressed()
 {
     ui->resultsList->clear();
     m_search_result.clear();
-    QString search=ui->txtKeywordSearch->text().toLower();
+    QString search=ui->txtKeywordSearch->text();
     m_request->startTransaction();
     m_request->search(search);
-    QByteArray array=m_request->endTransaction().buffer();
+    QByteArray array=m_request->endTransaction();
     QDataStream stream(&array,QIODevice::ReadOnly);
     QList<quint32> term_ids;
     stream>>term_ids;
@@ -316,7 +350,7 @@ void MainWindow::on_txtKeywordSearch_returnPressed()
     foreach (quint32 term_id, term_ids) {
         m_request->getTerm(term_id);
     }
-    QByteArray terms_data=m_request->endTransaction().buffer();
+    QByteArray terms_data=m_request->endTransaction();
     QDataStream terms_stream(&terms_data,QIODevice::ReadOnly);
     TermInfo ti;
     TermInfo * term_ptr=0;
@@ -359,7 +393,29 @@ void MainWindow::on_actionRequest_triggered()
 void MainWindow::on_actionAddTerm_triggered()
 {
     AddTermDialog dialog(m_request,ui->termsList->model(),&m_domains_info,this);
-    dialog.exec();
+    if(dialog.exec()==QDialog::Accepted)
+    {
+        loadIndex();
+        TermInfo ti=dialog.dialogResult();
+        if(m_domains.contains(ti.domain_id))
+        {
+            QTreeWidgetItem * parent=m_domains[ti.domain_id];
+            if(parent->isExpanded())
+            {
+                QTreeWidgetItem * item=new QTreeWidgetItem(parent);
+                item->setText(0,ti.title);
+                item->setData(0,Qt::UserRole,QVariant(ti.id));
+                item->setData(1,Qt::UserRole,QVariant(Term));
+                item->setToolTip(0,ti.title);
+                QByteArray data;
+                QDataStream stream(&data,QIODevice::WriteOnly);
+                stream<<ti;
+                item->setData(2,Qt::UserRole,QVariant(data));
+            }
+        }
+        if(dialog.isAutoStartEdit())
+            startEditTerm(ti);
+    }
 }
 
 void MainWindow::on_actionEdit_triggered()
@@ -371,6 +427,7 @@ void MainWindow::on_actionLogout_triggered()
 {
     clearAll();
     m_request->disconnectFromHost();
+    qDebug()<<"--------------------------------------";
     login(m_request,this);
 }
 

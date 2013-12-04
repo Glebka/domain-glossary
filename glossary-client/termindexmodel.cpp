@@ -5,8 +5,16 @@ TermIndexModel::TermIndexModel(RequestBuilder *builder, QMap<quint32, DomainInfo
   ,m_request(builder)
   ,is_requested(false)
   ,can_fetch(true)
-  ,m_domains(domains)
 {
+    m_request->startTransaction();
+    m_request->getAllDomains();
+    QByteArray bytes=m_request->endTransaction();
+    QDataStream stream(&bytes,QIODevice::ReadOnly);
+    QList<DomainInfo> list;
+    stream>>list;
+    foreach (DomainInfo di, list) {
+        m_domains.insert(di.id,di);
+    }
     startTimer(1000);
     connect(m_request,&RequestBuilder::loadTerms,this,&TermIndexModel::onTermsFetched);
     //connect(this,&TermIndexModel::request,this,&TermIndexModel::onRequest);
@@ -55,8 +63,8 @@ QVariant TermIndexModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case Qt::ToolTipRole:
     case Qt::DisplayRole:
-        if(m_domains->contains(item->domain_id))
-            return item->title+" ("+m_domains->value(item->domain_id).title.toLower()+")";
+        if(m_domains.contains(item->domain_id))
+            return item->title+" ("+m_domains.value(item->domain_id).title.toLower()+")";
         else
             return item->title;
     case Qt::UserRole:
@@ -90,8 +98,14 @@ void TermIndexModel::request() const
 {
     if(is_requested)
         return;
+    //m_request->startTransaction();
     m_request->getAllTerms(m_terms.size(),PORTION_SIZE);
     is_requested=true;
+    /*QByteArray array=m_request->endTransaction();
+    QDataStream stream(&array,QIODevice::ReadOnly);
+    QList<TermInfo> list;*/
+    //stream>>list;
+    //onTermsFetched(list);
 }
 
 
