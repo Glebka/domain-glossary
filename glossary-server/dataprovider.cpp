@@ -452,7 +452,12 @@ QString DataProvider::getConceptFileContents(quint32 conceptId)
         return QString();
     }
     QFile file;
-    Q_ASSERT(file.open(fdesc,QIODevice::ReadOnly));
+    if(!file.open(fdesc,QIODevice::ReadOnly))
+    {
+        log("Can't open QFile inst. of concept file: "+path);
+        close(fdesc);
+        return QString();
+    }
     QTextStream textStream(&file);
     QString content=textStream.readAll();
     file.close();
@@ -460,15 +465,57 @@ QString DataProvider::getConceptFileContents(quint32 conceptId)
     return content;
 }
 
+bool DataProvider::putConceptFileContents(quint32 conceptId, QString text)
+{
+    quint8 * id_path=(quint8 *)&conceptId;
+    QStringList pathList;
+    pathList<<DATA_DIRECTORY
+            <<QString::number(id_path[3],16)
+            <<QString::number(id_path[2],16)
+            <<QString::number(id_path[1],16)
+            <<QString::number(id_path[0],16);
+    QString path=pathList.join("/");
+    path.append(EXTENSION);
+    if(!QFile::copy(path,path +".bkp"))
+        log("Can't create backup of: "+path);
+    log("Will open concept file for Wr: "+path);
+    QFile file(path);
+    if(!file.open(QIODevice::WriteOnly))
+    {
+        log("Can't open QFile inst. of concept file: "+path);
+        //close(fdesc);
+        return false;
+    }
+    int fdesc=file.handle();
+    flock lock;
+    lock.l_type=F_WRLCK;
+    lock.l_whence=SEEK_SET;
+    lock.l_start=0;
+    lock.l_len=0;
+    int lockRes=fcntl(fdesc,F_SETLKW,&lock);
+    if(lockRes==-1)
+    {
+        log("Can't set WRLOCK to concept file: "+path);
+        file.close();
+        return false;
+    }
+    ftruncate(fdesc,0);
+    file.write(text.toLocal8Bit());
+    file.close();
+    if(!QFile::remove(path+".bkp"))
+        log("Can't remove backup file of: "+path);
+    return true;
+}
+
 void DataProvider::lockRead()
 {
-    for(int i=0;i<4;i++)
+    for(int i=0;i<LOCKERS_COUNT;i++)
         m_lockers[i].lockForRead();
 }
 
 void DataProvider::lockWrite()
 {
-    for(int i=0;i<4;i++)
+    for(int i=0;i<LOCKERS_COUNT;i++)
         m_lockers[i].lockForWrite();
 }
 

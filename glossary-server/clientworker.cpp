@@ -22,6 +22,7 @@ ClientWorker::ClientWorker(qintptr socketHandle,ServiceProvider * service, QObje
 
     m_methods[CMD_ADD_TERM]="addTerm";
     m_methods[CMD_ADD_TERM_TO_EXISTING]="addTermToExisting";
+    m_methods[CMD_EDIT_TERM]="editTerm";
 
     m_methods[CMD_LOGIN]="login";
     connect(&m_timer,&QTimer::timeout,this,&ClientWorker::timeout);

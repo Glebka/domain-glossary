@@ -18,6 +18,8 @@ RequestBuilder::RequestBuilder(QObject *parent) :
     m_methods[CMD_ADD_TERM]="on_addTerm";
     m_methods[CMD_ADD_TERM_TO_EXISTING]="on_addTerm";
 
+    m_methods[CMD_EDIT_TERM]="on_editTerm";
+
     m_methods[CMD_LOGIN]="on_login";
     m_methods[CMD_ERROR]="on_error";
     m_methods[CMD_FORBIDDEN]="on_forbidden";
@@ -56,6 +58,7 @@ void RequestBuilder::disconnectFromHost()
 
 void RequestBuilder::startTransaction()
 {
+    //Syncronization error: sleep forever because no one wake
     //QMutexLocker locker(&m_start_mutex);
     //if(m_is_transaction||!m_queue.isEmpty())
     //    m_activeTransaction.wait(&m_start_mutex);
@@ -69,6 +72,7 @@ void RequestBuilder::startTransaction()
 QByteArray RequestBuilder::endTransaction()
 {
     log("Waiting to close transaction...");
+    //Syncronization error: sleep forever because no one wake
     QMutexLocker locker(&m_mutex);
     m_transactionClosed.wait(&m_mutex);
     QBuffer buffer;
@@ -225,6 +229,24 @@ void RequestBuilder::addTermToExisting(QString term, quint32 anotherTermId)
     QDataStream stream(&buffer);
     stream<<term<<anotherTermId;
     QMetaObject::invokeMethod(m_proxy,"sendData",Qt::QueuedConnection,Q_ARG(quint32,CMD_ADD_TERM_TO_EXISTING),Q_ARG(QByteArray,buffer.buffer()));
+}
+
+void RequestBuilder::editTerm(quint32 termId, QString term, QStringList keywords, QString text)
+{
+    log("editTerm");
+    if(user.type!=Expert)
+    {
+        QMessageBox::warning(0,"Редактирование термина","Операция не разрешена. Войдите в систему, используя учетную запись эксперта.");
+        return;
+    }
+    if(m_is_transaction)
+        m_queue.enqueue(CMD_EDIT_TERM);
+    QBuffer buffer;
+    if(!buffer.open(QIODevice::WriteOnly))
+        return;
+    QDataStream stream(&buffer);
+    stream<<termId<<term<<keywords<<text;
+    QMetaObject::invokeMethod(m_proxy,"sendData",Qt::QueuedConnection,Q_ARG(quint32,CMD_EDIT_TERM),Q_ARG(QByteArray,buffer.buffer()));
 }
 
 void RequestBuilder::on_responseReady(PacketHeader header, QBufferPtr data)
@@ -386,6 +408,16 @@ void RequestBuilder::on_addTerm(PacketHeader header, QByteArray data)
     TermInfo ti;
     stream>>ti;
     emit termAdded(ti);
+}
+
+void RequestBuilder::on_editTerm(PacketHeader header, QByteArray data)
+{
+    if(header.status!=CMD_OK_NOCACHE)
+        qDebug()<<"Error on editTerm";
+    QDataStream stream(&data,QIODevice::ReadOnly);
+    TermInfo ti;
+    stream>>ti;
+    emit termEditionCompleted(ti);
 }
 
 void RequestBuilder::on_login(PacketHeader header, QByteArray data)

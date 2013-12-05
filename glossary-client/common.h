@@ -157,6 +157,7 @@ const quint32 CMD_GET_USER=0x30A;
 
 const quint32 CMD_ADD_TERM=0x30B;
 const quint32 CMD_ADD_TERM_TO_EXISTING=0x30C;
+const quint32 CMD_EDIT_TERM=0x30D;
 
 QDataStream & operator <<(QDataStream &out, const TermInfo & ti);
 QDataStream & operator <<(QDataStream &out, const ConceptInfo & ci);

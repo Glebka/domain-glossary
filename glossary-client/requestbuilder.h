@@ -40,6 +40,7 @@ signals:
     void loadSearch(QList<quint32> results);
     void loadTerm(TermInfo term);
     void termAdded(TermInfo term);
+    void termEditionCompleted(TermInfo term);
 
 public slots:
 
@@ -57,6 +58,7 @@ public slots:
 
     void addTerm(QString term);
     void addTermToExisting(QString term, quint32 anotherTermId);
+    void editTerm(quint32 termId,QString term,QStringList keywords, QString text);
 
     void on_responseReady(PacketHeader header, QBufferPtr data);
 
@@ -71,6 +73,7 @@ public slots:
     void on_search(PacketHeader header, QByteArray data);
 
     void on_addTerm(PacketHeader header, QByteArray data);
+    void on_editTerm(PacketHeader header, QByteArray data);
 
     void on_login(PacketHeader header, QByteArray data);
     void on_error(PacketHeader header, QByteArray data);

@@ -49,6 +49,8 @@ public slots:
     void addTerm(PacketHeader header,QBufferPtr data);
     void addTermToExisting(PacketHeader header,QBufferPtr data);
 
+    void editTerm(PacketHeader header,QBufferPtr data);
+
     void getDomainById(PacketHeader header,QBufferPtr data);
     void getUserById(PacketHeader header,QBufferPtr data);
 

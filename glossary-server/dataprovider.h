@@ -73,6 +73,7 @@ public:
     QMultiHash<QString,ConceptInfo *> * wrLockConceptsByKeyword();
     
     QString getConceptFileContents(quint32 conceptId);
+    bool putConceptFileContents(quint32 conceptId,QString text);
     
     void unlock();
 

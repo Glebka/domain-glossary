@@ -41,21 +41,11 @@ public:
 public slots:
     void onLinkClicked(QString uri);
 private slots:
-    void on_termsList_entered(const QModelIndex &index);
-
-    void on_termsList_pressed(const QModelIndex &index);
-
     void on_termsList_activated(const QModelIndex &index);
 
     void on_txtKeywordSearch_returnPressed();
 
     void on_resultsList_activated(const QModelIndex &index);
-
-    void on_actionBack_triggered();
-
-    void on_actionNext_triggered();
-
-    void on_actionRequest_triggered();
 
     void on_actionAddTerm_triggered();
 
@@ -64,6 +54,10 @@ private slots:
     void on_actionLogout_triggered();
 
     void on_actionRefresh_triggered();
+
+    void on_cmdSave_clicked();
+
+    void on_cmdCancel_clicked();
 
 private:
     void loadTree();
@@ -79,6 +73,7 @@ private:
     QMap<quint32, DomainInfo> m_domains_info;
     QMap<quint32, TermInfo> m_search_result;
 
+    TermInfo m_editing_term;
     //QTcpSocket * m_socket;
 };
 

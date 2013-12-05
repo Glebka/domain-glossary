@@ -46,10 +46,11 @@ void ServiceProvider::getAllDomains(PacketHeader header,QBufferPtr data)
 
     //Q_ASSERT(data.isOpen());
     QList<DomainInfo> list;
+    QMultiMap<QString,DomainInfo> map;
     foreach (DomainInfo * di, m_provider->allDomains()->values()) {
-        list<<*di;
+        map.insert(di->title,*di);
     }
-    output<<list;
+    output<<map.values();
     header.status=CMD_OK;
     invokeCallBack(header,result.buffer());
     result.close();
@@ -72,17 +73,13 @@ void ServiceProvider::getAllTerms(PacketHeader header,QBufferPtr data)
     quint32 start=0,length=0;
     input>>start>>length;
     auto termsByName=m_provider->rdLockTermsByName();
-    QList<TermInfo> list;
-    int fetched=0;
-    foreach (QString key, termsByName->keys().mid(start,length)) {
-        foreach (TermInfo * ti, termsByName->values(key)) {
-            if(fetched==length) break;
-            list<<*ti;
-            fetched++;
-        }
+    //QList<TermInfo> list;
+    QMultiMap<QString,TermInfo> map;
+    foreach (TermInfo * ti, termsByName->values().mid(start,length)) {
+        map.insert(ti->title,*ti);
     }
     m_provider->unlock();
-    output<<list;
+    output<<map.values();
     header.status=CMD_OK;
     invokeCallBack(header,result);
 }
@@ -102,12 +99,12 @@ void ServiceProvider::getTermsByDomain(PacketHeader header, QBufferPtr data)
     quint32 domainId=0;
     input>>domainId;
     const QMultiMap<quint32,TermInfo *> * termsByDomain=m_provider->rdLockTermsByDomainId();
-    QList<TermInfo> list;
+    QMultiMap<QString,TermInfo> map;
     foreach (TermInfo * ti, termsByDomain->values(domainId)) {
-        list<<*ti;
+        map.insert(ti->title,*ti);
     }
     m_provider->unlock();
-    output<<list;
+    output<<map.values();
     header.status=CMD_OK;
     invokeCallBack(header,result);
 }
@@ -299,6 +296,79 @@ void ServiceProvider::addTermToExisting(PacketHeader header, QBufferPtr data)
     termById->insert(ti->id,ti);
     termsByDomainId->insert(ti->domain_id,ti);
     termsByName->insert(ti->title,ti);
+    output<<*ti;
+    m_provider->unlock();
+    header.status=CMD_OK_NOCACHE;
+    invokeCallBack(header,result);
+}
+
+void ServiceProvider::editTerm(PacketHeader header, QBufferPtr data)
+{
+    if(!m_user || m_user->type!=Expert || m_user->domain_id==0)
+    {
+        header.status=CMD_FORBIDDEN;
+        invokeCallBack(header);
+        return;
+    }
+    QByteArray result;
+    QDataStream input(data);
+    QDataStream output(&result,QIODevice::WriteOnly);
+    Q_ASSERT(data->isOpen());
+    QString term,text;
+    quint32 termId;
+    QStringList keywords;
+    input>>termId>>term>>keywords>>text;
+    QMap<quint32,TermInfo *> * termById=m_provider->wrLockTermsById();
+    QMultiMap<QString,TermInfo *> * termsByName=m_provider->wrLockTermsByName();
+    QMap<quint32,ConceptInfo *> *conceptById=m_provider->wrLockConceptById();
+    QMultiHash<QString, ConceptInfo *> * conceptsByKeyword=m_provider->wrLockConceptsByKeyword();
+    TermInfo * ti=termById->value(termId);
+    if(!ti)
+    {
+        m_provider->unlock();
+        header.status=CMD_NOT_FOUND;
+        log("Term not found...");
+        invokeCallBack(header);
+        return;
+    }
+    if(ti->concept_list.size()==0)
+    {
+        m_provider->unlock();
+        header.status=CMD_NOT_FOUND;
+        log("Term has no concepts...");
+        invokeCallBack(header);
+        return;
+    }
+    ConceptInfo * ci=conceptById->value(ti->concept_list.first());
+    if(!ci)
+    {
+        m_provider->unlock();
+        header.status=CMD_NOT_FOUND;
+        log("Concept not found...");
+        invokeCallBack(header);
+        return;
+    }
+    if(!termsByName->remove(ti->title,ti))
+        log("Can't remove term record by name: "+ti->title);
+    foreach (QString key, ci->keywords) {
+        if(!conceptsByKeyword->remove(key,ci))
+            log("Can't remove concept record by key: "+key);
+    }
+    ti->title=term;
+    ci->keywords=keywords;
+    ci->last_modified=QDateTime::currentDateTime();
+    termsByName->insert(ti->title,ti);
+    foreach (QString key, ci->keywords) {
+        conceptsByKeyword->insert(key,ci);
+    }
+    if(!m_provider->putConceptFileContents(ci->id,text))
+    {
+        log("Can't put new concept content for term: "+ti->title);
+        m_provider->unlock();
+        header.status=CMD_ERROR;
+        invokeCallBack(header);
+        return;
+    }
     output<<*ti;
     m_provider->unlock();
     header.status=CMD_OK_NOCACHE;

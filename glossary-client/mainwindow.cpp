@@ -48,7 +48,7 @@ void MainWindow::loadData()
         act->setEnabled(true);
     }
     ui->actionEdit->setEnabled(false);
-    if(m_request->user.type!=Expert)
+    if(m_request->user.type!=Expert)    
         ui->actionAddTerm->setEnabled(false);
 }
 
@@ -118,11 +118,18 @@ void MainWindow::loadTree()
         if(items.size()==0) return;
         QTreeWidgetItem * item=items.first();
         if(item->data(1,Qt::UserRole).toInt()!=Term)
+        {
+            ui->actionEdit->setEnabled(false);
             return;
+        }
         QByteArray data=item->data(2,Qt::UserRole).toByteArray();
         QDataStream stream(&data,QIODevice::ReadOnly);
         TermInfo ti;
         stream>>ti;
+        if(ti.domain_id==m_request->user.domain_id)
+            ui->actionEdit->setEnabled(true);
+        else
+            ui->actionEdit->setEnabled(false);
         showTerm(ti);
     });
    //ui->contentsTree->topLevelItem(0)->setExpanded(true);
@@ -139,6 +146,7 @@ void MainWindow::loadIndex()
 
 void MainWindow::showTerm(TermInfo &ti)
 {
+    m_editing_term=ti;
     ui->stackedWidget->setCurrentIndex(0);
     qDebug()<<"Term #"<<ti.id;
     QTextDocument * document=ui->rtfView->document();
@@ -174,6 +182,7 @@ void MainWindow::showTerm(TermInfo &ti)
 void MainWindow::startEditTerm(TermInfo ti)
 {
     ui->stackedWidget->setCurrentIndex(1);
+    m_editing_term=ti;
     QTextDocument * document=ui->rtfEdit->document();
     document->clear();
     QTextCursor cursor=ui->rtfEdit->textCursor();
@@ -313,16 +322,6 @@ void MainWindow::initUI()
     ui->editPage->setLayout(ui->editLayout);
 }
 
-void MainWindow::on_termsList_entered(const QModelIndex &index)
-{
-
-}
-
-void MainWindow::on_termsList_pressed(const QModelIndex &index)
-{
-
-}
-
 void MainWindow::on_termsList_activated(const QModelIndex &index)
 {
     // bug with transactions
@@ -370,24 +369,9 @@ void MainWindow::on_resultsList_activated(const QModelIndex &index)
     if(index.isValid())
     {
         QListWidgetItem * item=(QListWidgetItem *)index.internalPointer();
-        TermInfo * ti=(TermInfo *)item->data(Qt::UserRole).toLongLong();
+        TermInfo * ti=(TermInfo *)item->data(Qt::UserRole).toLongLong();        
         showTerm(*ti);
     }
-}
-
-void MainWindow::on_actionBack_triggered()
-{
-
-}
-
-void MainWindow::on_actionNext_triggered()
-{
-
-}
-
-void MainWindow::on_actionRequest_triggered()
-{
-
 }
 
 void MainWindow::on_actionAddTerm_triggered()
@@ -411,6 +395,8 @@ void MainWindow::on_actionAddTerm_triggered()
                 QDataStream stream(&data,QIODevice::WriteOnly);
                 stream<<ti;
                 item->setData(2,Qt::UserRole,QVariant(data));
+                ui->contentsTree->clearSelection();
+                item->setSelected(true);
             }
         }
         if(dialog.isAutoStartEdit())
@@ -420,7 +406,7 @@ void MainWindow::on_actionAddTerm_triggered()
 
 void MainWindow::on_actionEdit_triggered()
 {
-
+    startEditTerm(m_editing_term);
 }
 
 void MainWindow::on_actionLogout_triggered()
@@ -435,4 +421,48 @@ void MainWindow::on_actionRefresh_triggered()
 {
     clearAll();
     loadData();
+}
+
+void MainWindow::on_cmdSave_clicked()
+{
+    QStringList keywords;
+    foreach(QString key,ui->txtKeywords->text().split(','))
+    {
+        keywords<<key.trimmed().toLower();
+    }
+    m_request->startTransaction();
+    m_request->editTerm(m_editing_term.id,ui->txtTerm->text(),keywords,ui->rtfEdit->toHtml());
+    QByteArray array=m_request->endTransaction();
+    if(array.size()>0)
+    {
+        QDataStream stream(&array,QIODevice::ReadOnly);
+        TermInfo ti;
+        stream>>ti;
+        if(ti.id==0)
+        {
+            QMessageBox::critical(this,"Редактирование термина","Операция завершилась с ошибкой.");
+            return;
+        }
+        else
+        {
+            /*if(m_domains.contains(ti.domain_id))
+            {
+                QTreeWidgetItem * item=m_domains[ti.domain_id];
+                if(item->isExpanded())
+                {
+                    item->setExpanded(false);
+                    item->setExpanded(true);
+                }
+            }*/
+            loadIndex();
+            showTerm(ti);
+        }
+    }
+    else
+        QMessageBox::critical(this,"Редактирование термина","Операция завершилась с ошибкой.");
+}
+
+void MainWindow::on_cmdCancel_clicked()
+{
+    showTerm(m_editing_term);
 }
